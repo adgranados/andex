@@ -23,8 +23,24 @@ async function ensureClaims(user: User) {
     body: JSON.stringify(payload)
   });
   if (!response.ok) {
-    throw new Error('No se pudo asignar el tenant.');
+    let data: any = null;
+    let rawText: string | null = null;
+    const contentType = response.headers.get('content-type') || '';
+
+    if (contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      // Si no es JSON, lo leemos como texto por si queremos loguearlo
+      rawText = await response.text();
+    }
+    const backendMessage =
+      data?.message ||
+      rawText ||
+      `HTTP ${response.status} ${response.statusText}(${ rawText })`;
+
+    throw new Error('No se pudo asignar el tenant. ' + backendMessage);   
   }
+
   const data = await response.json();
   await user.getIdToken(true);
   const destinationTenant = data.tenantId || cookieTenantId;

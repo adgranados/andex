@@ -38,10 +38,9 @@ export async function resolveTenantByHost(host: string): Promise<{ tenantId?: st
   return {};
 }
 
-export async function resolveTenantByEmailDomain(email: string): Promise<{ tenantId?: string; tenant?: Tenant }> {
-  const domain = extractDomainFromEmail(email);
-  if (!domain || !db?.collection) return {};
-  const q = await db.collection('tenants').where('emailDomains', 'array-contains', domain).limit(1).get();
+export async function resolveTenantByEmail(email: string): Promise<{ tenantId?: string; tenant?: Tenant }> {
+  const q = await db.collection('tenants').where('emails', 'array-contains', email).limit(1).get();
+  console.log(q.docs)
   if (!q.empty) {
     const doc = q.docs[0];
     return { tenantId: doc.id, tenant: { id: doc.id, ...(doc.data() as Tenant) } };

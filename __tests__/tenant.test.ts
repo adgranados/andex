@@ -7,7 +7,7 @@ const tenants = {
     logoUrl: 'https://acme/logo.png',
     primaryColor: '#ff5733',
     subdomains: ['acme'],
-    emailDomains: ['acme.com']
+    emails: ['pepe@acme.com']
   },
   globex: {
     id: 'globex',
@@ -15,7 +15,7 @@ const tenants = {
     logoUrl: '',
     primaryColor: '#00ff99',
     subdomains: ['globex'],
-    emailDomains: ['globex.com']
+    emails: ['adgranados@gmail.com']
   }
 };
 
@@ -25,7 +25,7 @@ vi.mock('@/src/server/firebaseAdmin', () => ({
       where: (field: string, _op: string, value: string) => ({
         limit: () => ({
           async get() {
-            const match = Object.values(tenants).find((tenant) => tenant[field as 'subdomains' | 'emailDomains']?.includes(value));
+            const match = Object.values(tenants).find((tenant) => tenant[field as 'subdomains' | 'emails']?.includes(value));
             if (!match) return { empty: true, docs: [] };
             return {
               empty: false,
@@ -43,7 +43,7 @@ vi.mock('@/src/server/firebaseAdmin', () => ({
   }
 }));
 
-import { extractSubdomain, resolveTenantByHost, resolveTenantByEmailDomain } from '@/src/lib/tenant';
+import { extractSubdomain, resolveTenantByHost, resolveTenantByEmail } from '@/src/lib/tenant';
 
 describe('tenant helpers', () => {
   it('detecta subdominio en entornos localhost', () => {
@@ -56,8 +56,8 @@ describe('tenant helpers', () => {
     expect(tenantId).toBe('acme');
   });
 
-  it('resuelve tenant por dominio de email', async () => {
-    const { tenantId } = await resolveTenantByEmailDomain('user@globex.com');
+  it('resuelve tenant por email', async () => {
+    const { tenantId } = await resolveTenantByEmail('adgranados@gmail.com');
     expect(tenantId).toBe('globex');
   });
 });
