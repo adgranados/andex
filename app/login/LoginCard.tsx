@@ -33,12 +33,18 @@ async function ensureClaims(user: User) {
       // Si no es JSON, lo leemos como texto por si queremos loguearlo
       rawText = await response.text();
     }
+
+    if (data?.code === 'NO_TENANT_ASSIGNED') {
+      window.location.href = '/onboarding';
+      return;
+    }
+
     const backendMessage =
       data?.message ||
       rawText ||
-      `HTTP ${response.status} ${response.statusText}(${ rawText })`;
+      `HTTP ${response.status} ${response.statusText}(${rawText})`;
 
-    throw new Error('No se pudo asignar el tenant. ' + backendMessage);   
+    throw new Error('No se pudo asignar el tenant. ' + backendMessage);
   }
 
   const data = await response.json();

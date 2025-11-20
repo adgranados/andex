@@ -15,16 +15,18 @@ export async function POST(request: Request) {
 
   if (!tenantId && email) {
     const resolved = await resolveTenantByEmail(email);
-    if(!resolved.tenantId){
-      console.error('[ensure-claims] no se pudo resolver el tenant por email:', email);
-      return NextResponse.json({ error: 'No se pudo resolver el tenant por email' }, { status: 400 });
+    if (!resolved.tenantId) {
+      console.log('[ensure-claims] no se pudo resolver el tenant por email:', email);
+      // No retornamos error aquí, dejamos que continúe para que caiga en el check de tenantId abajo
+      // y devuelva NO_TENANT_ASSIGNED
+    } else {
+      tenantId = resolved.tenantId;
     }
-    tenantId = resolved.tenantId;
   }
 
   if (!tenantId) {
     console.error('[ensure-claims] tenantId no detectado para uid:', uid);
-    return NextResponse.json({ error: 'Tenant no detectado' }, { status: 400 });
+    return NextResponse.json({ error: 'Tenant no detectado', code: 'NO_TENANT_ASSIGNED' }, { status: 400 });
   }
 
   try {
