@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { InlineModal } from './InlineModal';
+import { ZoneForm } from './QuickCreateForms';
 
 interface Zone {
     id: string;
@@ -11,8 +13,11 @@ interface Zone {
 export function ZoneList({ tenantId }: { tenantId: string }) {
     const [zones, setZones] = useState<Zone[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isCreating, setIsCreating] = useState(false);
+    const [editingZone, setEditingZone] = useState<Zone | null>(null);
 
-    useEffect(() => {
+    const fetchZones = () => {
+        setLoading(true);
         fetch(`/api/t/${tenantId}/zones`)
             .then((res) => res.json())
             .then((data) => {
@@ -23,7 +28,21 @@ export function ZoneList({ tenantId }: { tenantId: string }) {
                 console.error(err);
                 setLoading(false);
             });
+    };
+
+    useEffect(() => {
+        fetchZones();
     }, [tenantId]);
+
+    const handleCreateSuccess = (newZone: Zone) => {
+        setZones([...zones, newZone]);
+        setIsCreating(false);
+    };
+
+    const handleEditSuccess = (updatedZone: Zone) => {
+        setZones(zones.map(z => z.id === updatedZone.id ? updatedZone : z));
+        setEditingZone(null);
+    };
 
     if (loading) return <div className="text-slate-400">Cargando zonas...</div>;
 
@@ -31,7 +50,10 @@ export function ZoneList({ tenantId }: { tenantId: string }) {
         <div>
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-white">Zonas</h2>
-                <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                <button
+                    onClick={() => setIsCreating(true)}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                >
                     + Nueva Zona
                 </button>
             </div>
@@ -51,7 +73,12 @@ export function ZoneList({ tenantId }: { tenantId: string }) {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{zone.name}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{zone.description || '-'}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <button className="text-indigo-400 hover:text-indigo-300">Editar</button>
+                                    <button
+                                        onClick={() => setEditingZone(zone)}
+                                        className="text-indigo-400 hover:text-indigo-300"
+                                    >
+                                        Editar
+                                    </button>
                                 </td>
                             </tr>
                         ))}
@@ -65,6 +92,25 @@ export function ZoneList({ tenantId }: { tenantId: string }) {
                     </tbody>
                 </table>
             </div>
+
+            <InlineModal isOpen={isCreating} onClose={() => setIsCreating(false)} title="Nueva Zona">
+                <ZoneForm
+                    tenantId={tenantId}
+                    onSuccess={handleCreateSuccess}
+                    onCancel={() => setIsCreating(false)}
+                />
+            </InlineModal>
+
+            <InlineModal isOpen={!!editingZone} onClose={() => setEditingZone(null)} title="Editar Zona">
+                {editingZone && (
+                    <ZoneForm
+                        tenantId={tenantId}
+                        initialData={editingZone}
+                        onSuccess={handleEditSuccess}
+                        onCancel={() => setEditingZone(null)}
+                    />
+                )}
+            </InlineModal>
         </div>
     );
 }

@@ -30,6 +30,29 @@ export async function POST(request: Request, { params }: { params: { tenantId: s
 
         return NextResponse.json({ id: docRef.id, name, description });
     } catch (error) {
-        return NextResponse.json({ error: 'Failed to create zone' }, { status: 500 });
+        console.error('Error creating zone:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
+
+export async function PUT(request: Request, { params }: { params: { tenantId: string } }) {
+    try {
+        const { tenantId } = params;
+        const body = await request.json();
+        const { id, name, description } = body;
+
+        if (!id || !name) {
+            return NextResponse.json({ error: 'ID and Name are required' }, { status: 400 });
+        }
+
+        await db.collection(`tCollections/${tenantId}/zones`).doc(id).update({
+            name,
+            description: description || ''
+        });
+
+        return NextResponse.json({ id, name, description });
+    } catch (error) {
+        console.error('Error updating zone:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
