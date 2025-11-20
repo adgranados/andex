@@ -4,42 +4,58 @@ import { useEffect, useState } from 'react';
 import { InlineModal } from './InlineModal';
 import { ZoneForm, TypeForm, OwnerForm } from './QuickCreateForms';
 
-interface PropertyFormProps {
+interface BaseFormProps {
     tenantId: string;
-    onSuccess: () => void;
+    onSuccess: (item?: any) => void;
     onCancel: () => void;
 }
 
-export function PropertyForm({ tenantId, onSuccess, onCancel }: PropertyFormProps) {
-    const [formData, setFormData] = useState({
-        address: '',
-        coefficient: '',
-        typeId: '',
-        zoneId: '',
-        ownerId: '',
-    });
+interface PropertyFormProps extends BaseFormProps {
+    initialData?: {
+        id: string;
+        name: string;
+        zoneId: string;
+        typeId: string;
+        ownerId: string;
+        address?: string;
+    };
+}
 
-    const [zones, setZones] = useState<any[]>([]);
-    const [types, setTypes] = useState<any[]>([]);
-    const [owners, setOwners] = useState<any[]>([]);
+export function PropertyForm({ tenantId, onSuccess, onCancel, initialData }: PropertyFormProps) {
+    const [name, setName] = useState(initialData?.name || '');
+    const [zoneId, setZoneId] = useState(initialData?.zoneId || '');
+    const [typeId, setTypeId] = useState(initialData?.typeId || '');
+    const [ownerId, setOwnerId] = useState(initialData?.ownerId || '');
+    const [address, setAddress] = useState(initialData?.address || '');
 
-    const [modalOpen, setModalOpen] = useState<'zone' | 'type' | 'owner' | null>(null);
+    const [zones, setZones] = useState<{ id: string; name: string }[]>([]);
+    const [types, setTypes] = useState<{ id: string; name: string }[]>([]);
+    const [owners, setOwners] = useState<{ id: string; name: string }[]>([]);
+
     const [loading, setLoading] = useState(false);
+    const [fetchingDeps, setFetchingDeps] = useState(true);
 
-    // Fetch dependencies
+    // Modal states for inline creation
+    const [isZoneModalOpen, setIsZoneModalOpen] = useState(false);
+    const [isTypeModalOpen, setIsTypeModalOpen] = useState(false);
+    const [isOwnerModalOpen, setIsOwnerModalOpen] = useState(false);
+
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [z, t, o] = await Promise.all([
-                    fetch(`/api/t/${tenantId}/zones`).then(r => r.json()),
-                    fetch(`/api/t/${tenantId}/property-types`).then(r => r.json()),
-                    fetch(`/api/t/${tenantId}/owners`).then(r => r.json())
+                const [zonesRes, typesRes, ownersRes] = await Promise.all([
+                    fetch(`/api/t/${tenantId}/zones`),
+                    fetch(`/api/t/${tenantId}/property-types`),
+                    fetch(`/api/t/${tenantId}/owners`)
                 ]);
-                setZones(z);
-                setTypes(t);
-                setOwners(o);
-            } catch (e) {
-                console.error('Error fetching dependencies', e);
+
+                if (zonesRes.ok) setZones(await zonesRes.json());
+                if (typesRes.ok) setTypes(await typesRes.json());
+                if (ownersRes.ok) setOwners(await ownersRes.json());
+            } catch (error) {
+                console.error('Error fetching dependencies:', error);
+            } finally {
+                setFetchingDeps(false);
             }
         };
         fetchData();
@@ -49,18 +65,21 @@ export function PropertyForm({ tenantId, onSuccess, onCancel }: PropertyFormProp
         e.preventDefault();
         setLoading(true);
         try {
+            const method = initialData ? 'PUT' : 'POST';
+            const body = initialData
+                ? { id: initialData.id, name, zoneId, typeId, ownerId, address }
+                : { name, zoneId, typeId, ownerId, address };
+
             const res = await fetch(`/api/t/${tenantId}/properties`, {
-                method: 'POST',
+                method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    ...formData,
-                    coefficient: Number(formData.coefficient)
-                }),
+                body: JSON.stringify(body),
             });
             if (res.ok) {
-                onSuccess();
+                const newItem = await res.json();
+                onSuccess(newItem);
             } else {
-                alert('Error creating property');
+                console.error('Failed to save property');
             }
         } catch (error) {
             console.error(error);
@@ -69,132 +88,149 @@ export function PropertyForm({ tenantId, onSuccess, onCancel }: PropertyFormProp
         }
     };
 
-    const handleSelectChange = (field: string, value: string) => {
-        if (value === 'NEW_ZONE') {
-            setModalOpen('zone');
-        } else if (value === 'NEW_TYPE') {
-            setModalOpen('type');
-        } else if (value === 'NEW_OWNER') {
-            setModalOpen('owner');
-        } else {
-            setFormData(prev => ({ ...prev, [field]: value }));
-        }
+    const handleZoneCreated = (newZone: any) => {
+        setZones([...zones, newZone]);
+        setZoneId(newZone.id);
+        setIsZoneModalOpen(false);
     };
 
-    const handleNewItemCreated = (type: 'zone' | 'type' | 'owner', item: any) => {
-        if (type === 'zone') {
-            setZones(prev => [...prev, item]);
-            setFormData(prev => ({ ...prev, zoneId: item.id }));
-        } else if (type === 'type') {
-            setTypes(prev => [...prev, item]);
-            setFormData(prev => ({ ...prev, typeId: item.id }));
-        } else if (type === 'owner') {
-            setOwners(prev => [...prev, item]);
-            setFormData(prev => ({ ...prev, ownerId: item.id }));
-        }
-        setModalOpen(null);
+    const handleTypeCreated = (newType: any) => {
+        setTypes([...types, newType]);
+        setTypeId(newType.id);
+        setIsTypeModalOpen(false);
     };
+
+    const handleOwnerCreated = (newOwner: any) => {
+        setOwners([...owners, newOwner]);
+        setOwnerId(newOwner.id);
+        setIsOwnerModalOpen(false);
+    };
+
+    if (fetchingDeps) return <div className="text-slate-400">Cargando datos...</div>;
 
     return (
-        <div className="bg-slate-900 p-6 rounded-lg border border-white/10">
-            <h2 className="text-xl font-semibold text-white mb-6">Nueva Propiedad</h2>
-
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Address */}
-                <div className="col-span-2">
-                    <label className="block text-sm font-medium text-slate-400">Dirección / Nomenclatura *</label>
+        <>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium text-slate-400">Nombre de la Propiedad</label>
                     <input
                         type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2"
                         required
-                        value={formData.address}
-                        onChange={e => setFormData({ ...formData, address: e.target.value })}
-                        className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
                     />
                 </div>
 
-                {/* Coefficient */}
+                {/* Zone Selection */}
                 <div>
-                    <label className="block text-sm font-medium text-slate-400">Coeficiente *</label>
+                    <label className="block text-sm font-medium text-slate-400">Zona</label>
+                    <div className="flex gap-2">
+                        <select
+                            value={zoneId}
+                            onChange={(e) => setZoneId(e.target.value)}
+                            className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2"
+                            required
+                        >
+                            <option value="">Seleccionar Zona</option>
+                            {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
+                        </select>
+                        <button
+                            type="button"
+                            onClick={() => setIsZoneModalOpen(true)}
+                            className="mt-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-md text-sm"
+                        >
+                            +
+                        </button>
+                    </div>
+                </div>
+
+                {/* Type Selection */}
+                <div>
+                    <label className="block text-sm font-medium text-slate-400">Tipo de Propiedad</label>
+                    <div className="flex gap-2">
+                        <select
+                            value={typeId}
+                            onChange={(e) => setTypeId(e.target.value)}
+                            className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2"
+                            required
+                        >
+                            <option value="">Seleccionar Tipo</option>
+                            {types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                        </select>
+                        <button
+                            type="button"
+                            onClick={() => setIsTypeModalOpen(true)}
+                            className="mt-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-md text-sm"
+                        >
+                            +
+                        </button>
+                    </div>
+                </div>
+
+                {/* Owner Selection */}
+                <div>
+                    <label className="block text-sm font-medium text-slate-400">Propietario</label>
+                    <div className="flex gap-2">
+                        <select
+                            value={ownerId}
+                            onChange={(e) => setOwnerId(e.target.value)}
+                            className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2"
+                            required
+                        >
+                            <option value="">Seleccionar Propietario</option>
+                            {owners.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}
+                        </select>
+                        <button
+                            type="button"
+                            onClick={() => setIsOwnerModalOpen(true)}
+                            className="mt-1 px-3 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-md text-sm"
+                        >
+                            +
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <label className="block text-sm font-medium text-slate-400">Dirección</label>
                     <input
-                        type="number"
-                        step="0.0001"
-                        required
-                        value={formData.coefficient}
-                        onChange={e => setFormData({ ...formData, coefficient: e.target.value })}
-                        className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                        type="text"
+                        value={address}
+                        onChange={(e) => setAddress(e.target.value)}
+                        className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2"
                     />
                 </div>
 
-                {/* Property Type */}
-                <div>
-                    <label className="block text-sm font-medium text-slate-400">Tipo de Inmueble *</label>
-                    <select
-                        required
-                        value={formData.typeId}
-                        onChange={e => handleSelectChange('typeId', e.target.value)}
-                        className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
+                <div className="flex justify-end space-x-3 pt-4">
+                    <button
+                        type="button"
+                        onClick={onCancel}
+                        className="px-4 py-2 text-sm font-medium text-slate-300 hover:text-white transition-colors"
                     >
-                        <option value="">Seleccionar...</option>
-                        {types.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                        <option value="NEW_TYPE" className="font-bold text-indigo-400">+ Crear nuevo tipo...</option>
-                    </select>
-                </div>
-
-                {/* Zone */}
-                <div>
-                    <label className="block text-sm font-medium text-slate-400">Zona *</label>
-                    <select
-                        required
-                        value={formData.zoneId}
-                        onChange={e => handleSelectChange('zoneId', e.target.value)}
-                        className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
-                    >
-                        <option value="">Seleccionar...</option>
-                        {zones.map(z => <option key={z.id} value={z.id}>{z.name}</option>)}
-                        <option value="NEW_ZONE" className="font-bold text-indigo-400">+ Crear nueva zona...</option>
-                    </select>
-                </div>
-
-                {/* Owner */}
-                <div className="col-span-2">
-                    <label className="block text-sm font-medium text-slate-400">Propietario *</label>
-                    <select
-                        required
-                        value={formData.ownerId}
-                        onChange={e => handleSelectChange('ownerId', e.target.value)}
-                        className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 px-3 py-2"
-                    >
-                        <option value="">Seleccionar...</option>
-                        {owners.map(o => <option key={o.id} value={o.id}>{o.name} {o.identificationNumber ? `(${o.identificationNumber})` : ''}</option>)}
-                        <option value="NEW_OWNER" className="font-bold text-indigo-400">+ Crear nuevo propietario...</option>
-                    </select>
-                </div>
-
-                {/* Actions */}
-                <div className="col-span-2 flex justify-end space-x-4 pt-4 border-t border-white/10">
-                    <button type="button" onClick={onCancel} className="text-slate-400 hover:text-white">Cancelar</button>
+                        Cancelar
+                    </button>
                     <button
                         type="submit"
                         disabled={loading}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-md font-medium disabled:opacity-50"
+                        className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md shadow-sm disabled:opacity-50 transition-colors"
                     >
                         {loading ? 'Guardando...' : 'Guardar Propiedad'}
                     </button>
                 </div>
             </form>
 
-            {/* Modals */}
-            <InlineModal isOpen={modalOpen === 'zone'} onClose={() => setModalOpen(null)} title="Nueva Zona">
-                <ZoneForm tenantId={tenantId} onSuccess={(item) => handleNewItemCreated('zone', item)} onCancel={() => setModalOpen(null)} />
+            {/* Inline Modals */}
+            <InlineModal isOpen={isZoneModalOpen} onClose={() => setIsZoneModalOpen(false)} title="Nueva Zona">
+                <ZoneForm tenantId={tenantId} onSuccess={handleZoneCreated} onCancel={() => setIsZoneModalOpen(false)} />
             </InlineModal>
 
-            <InlineModal isOpen={modalOpen === 'type'} onClose={() => setModalOpen(null)} title="Nuevo Tipo de Propiedad">
-                <TypeForm tenantId={tenantId} onSuccess={(item) => handleNewItemCreated('type', item)} onCancel={() => setModalOpen(null)} />
+            <InlineModal isOpen={isTypeModalOpen} onClose={() => setIsTypeModalOpen(false)} title="Nuevo Tipo">
+                <TypeForm tenantId={tenantId} onSuccess={handleTypeCreated} onCancel={() => setIsTypeModalOpen(false)} />
             </InlineModal>
 
-            <InlineModal isOpen={modalOpen === 'owner'} onClose={() => setModalOpen(null)} title="Nuevo Propietario">
-                <OwnerForm tenantId={tenantId} onSuccess={(item) => handleNewItemCreated('owner', item)} onCancel={() => setModalOpen(null)} />
+            <InlineModal isOpen={isOwnerModalOpen} onClose={() => setIsOwnerModalOpen(false)} title="Nuevo Propietario">
+                <OwnerForm tenantId={tenantId} onSuccess={handleOwnerCreated} onCancel={() => setIsOwnerModalOpen(false)} />
             </InlineModal>
-        </div>
+        </>
     );
 }

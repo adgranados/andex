@@ -16,23 +16,51 @@ export async function POST(request: Request, { params }: { params: { tenantId: s
     try {
         const { tenantId } = params;
         const body = await request.json();
-        const { address, coefficient, typeId, zoneId, ownerId } = body;
+        const { name, address, typeId, zoneId, ownerId } = body;
 
-        if (!address || !typeId || !zoneId || !ownerId) {
+        if (!name || !typeId || !zoneId || !ownerId) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        if (coefficient <= 0) {
-            return NextResponse.json({ error: 'Coefficient must be greater than 0' }, { status: 400 });
-        }
+
 
         const docRef = await db.collection(`tCollections/${tenantId}/properties`).add({
-            ...body,
+            name,
+            zoneId,
+            typeId,
+            ownerId,
+            address: address || '',
             createdAt: new Date().toISOString()
         });
 
-        return NextResponse.json({ id: docRef.id, ...body });
+        return NextResponse.json({ id: docRef.id, name, zoneId, typeId, ownerId, address });
     } catch (error) {
-        return NextResponse.json({ error: 'Failed to create property' }, { status: 500 });
+        console.error('Error creating property:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
+
+export async function PUT(request: Request, { params }: { params: { tenantId: string } }) {
+    try {
+        const { tenantId } = params;
+        const body = await request.json();
+        const { id, name, zoneId, typeId, ownerId, address } = body;
+
+        if (!id || !name || !zoneId || !typeId || !ownerId) {
+            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        }
+
+        await db.collection(`tCollections/${tenantId}/properties`).doc(id).update({
+            name,
+            zoneId,
+            typeId,
+            ownerId,
+            address: address || ''
+        });
+
+        return NextResponse.json({ id, name, zoneId, typeId, ownerId, address });
+    } catch (error) {
+        console.error('Error updating property:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }
