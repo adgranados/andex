@@ -16,7 +16,7 @@ export async function POST(request: Request, { params }: { params: { tenantId: s
     try {
         const { tenantId } = params;
         const body = await request.json();
-        const { name } = body;
+        const { name, description } = body;
 
         if (!name) {
             return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -24,11 +24,35 @@ export async function POST(request: Request, { params }: { params: { tenantId: s
 
         const docRef = await db.collection(`tCollections/${tenantId}/propertyTypes`).add({
             name,
+            description: description || '',
             createdAt: new Date().toISOString()
         });
 
-        return NextResponse.json({ id: docRef.id, name });
+        return NextResponse.json({ id: docRef.id, name, description });
     } catch (error) {
-        return NextResponse.json({ error: 'Failed to create property type' }, { status: 500 });
+        console.error('Error creating property type:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
+
+export async function PUT(request: Request, { params }: { params: { tenantId: string } }) {
+    try {
+        const { tenantId } = params;
+        const body = await request.json();
+        const { id, name, description } = body;
+
+        if (!id || !name) {
+            return NextResponse.json({ error: 'ID and Name are required' }, { status: 400 });
+        }
+
+        await db.collection(`tCollections/${tenantId}/propertyTypes`).doc(id).update({
+            name,
+            description: description || ''
+        });
+
+        return NextResponse.json({ id, name, description });
+    } catch (error) {
+        console.error('Error updating property type:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

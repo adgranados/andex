@@ -76,22 +76,32 @@ export function ZoneForm({ tenantId, onSuccess, onCancel, initialData }: ZoneFor
     );
 }
 
-export function TypeForm({ tenantId, onSuccess, onCancel }: BaseFormProps) {
-    const [name, setName] = useState('');
+interface TypeFormProps extends BaseFormProps {
+    initialData?: { id: string; name: string; description?: string };
+}
+
+export function TypeForm({ tenantId, onSuccess, onCancel, initialData }: TypeFormProps) {
+    const [name, setName] = useState(initialData?.name || '');
+    const [description, setDescription] = useState(initialData?.description || '');
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         try {
+            const method = initialData ? 'PUT' : 'POST';
+            const body = initialData ? { id: initialData.id, name, description } : { name, description };
+
             const res = await fetch(`/api/t/${tenantId}/property-types`, {
-                method: 'POST',
+                method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name }),
+                body: JSON.stringify(body),
             });
             if (res.ok) {
                 const newItem = await res.json();
                 onSuccess(newItem);
+            } else {
+                console.error('Failed to save property type');
             }
         } catch (error) {
             console.error(error);
