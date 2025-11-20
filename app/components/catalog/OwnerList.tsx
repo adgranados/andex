@@ -7,6 +7,7 @@ interface Owner {
     name: string;
     identificationNumber?: string;
     email?: string;
+    phone?: string;
 }
 
 export function OwnerList({ tenantId }: { tenantId: string }) {
@@ -44,6 +45,7 @@ export function OwnerList({ tenantId }: { tenantId: string }) {
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Nombre / Razón Social</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Identificación</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Email</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Teléfono</th>
                             <th scope="col" className="relative px-6 py-3"><span className="sr-only">Acciones</span></th>
                         </tr>
                     </thead>
@@ -53,6 +55,7 @@ export function OwnerList({ tenantId }: { tenantId: string }) {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{owner.name}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{owner.identificationNumber || '-'}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{owner.email || '-'}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{owner.phone || '-'}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <button className="text-indigo-400 hover:text-indigo-300">Editar</button>
                                 </td>

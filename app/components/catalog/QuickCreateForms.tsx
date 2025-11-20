@@ -122,6 +122,7 @@ export function OwnerForm({ tenantId, onSuccess, onCancel }: BaseFormProps) {
     const [name, setName] = useState('');
     const [identificationNumber, setIdentificationNumber] = useState('');
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -131,7 +132,7 @@ export function OwnerForm({ tenantId, onSuccess, onCancel }: BaseFormProps) {
             const res = await fetch(`/api/t/${tenantId}/owners`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, identificationNumber, email }),
+                body: JSON.stringify({ name, identificationNumber, email, phone }),
             });
             if (res.ok) {
                 const newItem = await res.json();
@@ -171,6 +172,15 @@ export function OwnerForm({ tenantId, onSuccess, onCancel }: BaseFormProps) {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2"
+                />
+            </div>
+            <div>
+                <label className="block text-sm font-medium text-slate-400">Teléfono de Contacto</label>
+                <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                     className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2"
                 />
             </div>

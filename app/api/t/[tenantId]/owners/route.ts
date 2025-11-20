@@ -16,7 +16,7 @@ export async function POST(request: Request, { params }: { params: { tenantId: s
     try {
         const { tenantId } = params;
         const body = await request.json();
-        const { name, identificationNumber } = body;
+        const { name, identificationNumber, email, phone } = body;
 
         if (!name) {
             return NextResponse.json({ error: 'Name is required' }, { status: 400 });
@@ -26,7 +26,10 @@ export async function POST(request: Request, { params }: { params: { tenantId: s
         // but for now we stick to the basic requirement.
 
         const docRef = await db.collection(`tCollections/${tenantId}/owners`).add({
-            ...body,
+            name,
+            identificationNumber: identificationNumber || '',
+            email: email || '',
+            phone: phone || '',
             createdAt: new Date().toISOString()
         });
 
