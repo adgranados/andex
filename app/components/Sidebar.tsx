@@ -35,22 +35,35 @@ export function Sidebar({ tenantId, tenantName }: SidebarProps) {
                     </span>
                 </div>
 
-                <ul className="space-y-2 font-medium flex-1">
-                    {links.map((link) => {
-                        const isActive = pathname === link.href;
-                        return (
-                            <li key={link.href}>
-                                <Link
-                                    href={link.href}
-                                    className={`flex items-center rounded-lg p-2 text-white hover:bg-white/10 group ${isActive ? 'bg-white/10' : ''
-                                        }`}
-                                >
-                                    <span className="ml-3">{link.label}</span>
-                                </Link>
-                            </li>
-                        );
-                    })}
-                </ul>
+                <nav className="flex-1 space-y-1 px-2 py-4">
+                    <Link
+                        href={`/t/${tenantId}/dashboard`}
+                        className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${pathname.endsWith('/dashboard')
+                                ? 'bg-indigo-500/10 text-indigo-400'
+                                : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                            }`}
+                    >
+                        Dashboard
+                    </Link>
+                    <Link
+                        href={`/t/${tenantId}/catalog`}
+                        className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${pathname.includes('/catalog')
+                                ? 'bg-indigo-500/10 text-indigo-400'
+                                : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                            }`}
+                    >
+                        Catálogo Maestro
+                    </Link>
+                    <Link
+                        href={`/t/${tenantId}/settings`}
+                        className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${pathname.endsWith('/settings')
+                                ? 'bg-indigo-500/10 text-indigo-400'
+                                : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                            }`}
+                    >
+                        Settings
+                    </Link>
+                </nav>
 
                 <div className="mt-auto border-t border-white/10 pt-4">
                     <button
