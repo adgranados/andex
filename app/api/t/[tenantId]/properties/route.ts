@@ -16,13 +16,11 @@ export async function POST(request: Request, { params }: { params: { tenantId: s
     try {
         const { tenantId } = params;
         const body = await request.json();
-        const { name, address, typeId, zoneId, ownerId } = body;
+        const { name, address, typeId, zoneId, ownerId, coefficient } = body;
 
         if (!name || !typeId || !zoneId || !ownerId) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
-
-
 
         const docRef = await db.collection(`tCollections/${tenantId}/properties`).add({
             name,
@@ -30,10 +28,11 @@ export async function POST(request: Request, { params }: { params: { tenantId: s
             typeId,
             ownerId,
             address: address || '',
+            coefficient: coefficient || 0,
             createdAt: new Date().toISOString()
         });
 
-        return NextResponse.json({ id: docRef.id, name, zoneId, typeId, ownerId, address });
+        return NextResponse.json({ id: docRef.id, name, zoneId, typeId, ownerId, address, coefficient: coefficient || 0 });
     } catch (error) {
         console.error('Error creating property:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -44,7 +43,7 @@ export async function PUT(request: Request, { params }: { params: { tenantId: st
     try {
         const { tenantId } = params;
         const body = await request.json();
-        const { id, name, zoneId, typeId, ownerId, address } = body;
+        const { id, name, zoneId, typeId, ownerId, address, coefficient } = body;
 
         if (!id || !name || !zoneId || !typeId || !ownerId) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -55,10 +54,11 @@ export async function PUT(request: Request, { params }: { params: { tenantId: st
             zoneId,
             typeId,
             ownerId,
-            address: address || ''
+            address: address || '',
+            coefficient: coefficient || 0
         });
 
-        return NextResponse.json({ id, name, zoneId, typeId, ownerId, address });
+        return NextResponse.json({ id, name, zoneId, typeId, ownerId, address, coefficient: coefficient || 0 });
     } catch (error) {
         console.error('Error updating property:', error);
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

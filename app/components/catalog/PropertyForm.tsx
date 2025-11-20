@@ -18,6 +18,7 @@ interface PropertyFormProps extends BaseFormProps {
         typeId: string;
         ownerId: string;
         address?: string;
+        coefficient?: number;
     };
 }
 
@@ -27,6 +28,7 @@ export function PropertyForm({ tenantId, onSuccess, onCancel, initialData }: Pro
     const [typeId, setTypeId] = useState(initialData?.typeId || '');
     const [ownerId, setOwnerId] = useState(initialData?.ownerId || '');
     const [address, setAddress] = useState(initialData?.address || '');
+    const [coefficient, setCoefficient] = useState(initialData?.coefficient?.toString() || '');
 
     const [zones, setZones] = useState<{ id: string; name: string }[]>([]);
     const [types, setTypes] = useState<{ id: string; name: string }[]>([]);
@@ -67,8 +69,8 @@ export function PropertyForm({ tenantId, onSuccess, onCancel, initialData }: Pro
         try {
             const method = initialData ? 'PUT' : 'POST';
             const body = initialData
-                ? { id: initialData.id, name, zoneId, typeId, ownerId, address }
-                : { name, zoneId, typeId, ownerId, address };
+                ? { id: initialData.id, name, zoneId, typeId, ownerId, address, coefficient: parseFloat(coefficient) || 0 }
+                : { name, zoneId, typeId, ownerId, address, coefficient: parseFloat(coefficient) || 0 };
 
             const res = await fetch(`/api/t/${tenantId}/properties`, {
                 method,
@@ -191,14 +193,26 @@ export function PropertyForm({ tenantId, onSuccess, onCancel, initialData }: Pro
                     </div>
                 </div>
 
-                <div>
-                    <label className="block text-sm font-medium text-slate-400">Dirección</label>
-                    <input
-                        type="text"
-                        value={address}
-                        onChange={(e) => setAddress(e.target.value)}
-                        className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2"
-                    />
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm font-medium text-slate-400">Dirección</label>
+                        <input
+                            type="text"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-400">Coeficiente</label>
+                        <input
+                            type="number"
+                            step="0.0001"
+                            value={coefficient}
+                            onChange={(e) => setCoefficient(e.target.value)}
+                            className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm px-3 py-2"
+                        />
+                    </div>
                 </div>
 
                 <div className="flex justify-end space-x-3 pt-4">

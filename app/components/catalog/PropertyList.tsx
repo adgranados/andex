@@ -12,6 +12,7 @@ interface Property {
     zoneId: string;
     typeId: string;
     ownerId: string;
+    coefficient?: number;
 }
 
 export function PropertyList({ tenantId }: { tenantId: string }) {
@@ -68,6 +69,7 @@ export function PropertyList({ tenantId }: { tenantId: string }) {
                         <tr>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Nombre</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Dirección</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Coeficiente</th>
                             <th scope="col" className="relative px-6 py-3"><span className="sr-only">Acciones</span></th>
                         </tr>
                     </thead>
@@ -76,6 +78,7 @@ export function PropertyList({ tenantId }: { tenantId: string }) {
                             <tr key={property.id} className="hover:bg-white/5 transition-colors">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{property.name}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{property.address || '-'}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{property.coefficient || '-'}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <button
                                         onClick={() => setEditingProperty(property)}
