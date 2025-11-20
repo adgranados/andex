@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { InlineModal } from './InlineModal';
+import { OwnerForm } from './QuickCreateForms';
 
 interface Owner {
     id: string;
@@ -13,8 +15,11 @@ interface Owner {
 export function OwnerList({ tenantId }: { tenantId: string }) {
     const [owners, setOwners] = useState<Owner[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isCreating, setIsCreating] = useState(false);
+    const [editingOwner, setEditingOwner] = useState<Owner | null>(null);
 
-    useEffect(() => {
+    const fetchOwners = () => {
+        setLoading(true);
         fetch(`/api/t/${tenantId}/owners`)
             .then((res) => res.json())
             .then((data) => {
@@ -25,7 +30,21 @@ export function OwnerList({ tenantId }: { tenantId: string }) {
                 console.error(err);
                 setLoading(false);
             });
+    };
+
+    useEffect(() => {
+        fetchOwners();
     }, [tenantId]);
+
+    const handleCreateSuccess = (newOwner: Owner) => {
+        setOwners([...owners, newOwner]);
+        setIsCreating(false);
+    };
+
+    const handleEditSuccess = (updatedOwner: Owner) => {
+        setOwners(owners.map(o => o.id === updatedOwner.id ? updatedOwner : o));
+        setEditingOwner(null);
+    };
 
     if (loading) return <div className="text-slate-400">Cargando propietarios...</div>;
 
@@ -33,7 +52,10 @@ export function OwnerList({ tenantId }: { tenantId: string }) {
         <div>
             <div className="flex justify-between items-center mb-4">
                 <h2 className="text-xl font-semibold text-white">Propietarios</h2>
-                <button className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                <button
+                    onClick={() => setIsCreating(true)}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                >
                     + Nuevo Propietario
                 </button>
             </div>
@@ -57,13 +79,18 @@ export function OwnerList({ tenantId }: { tenantId: string }) {
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{owner.email || '-'}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{owner.phone || '-'}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                    <button className="text-indigo-400 hover:text-indigo-300">Editar</button>
+                                    <button
+                                        onClick={() => setEditingOwner(owner)}
+                                        className="text-indigo-400 hover:text-indigo-300"
+                                    >
+                                        Editar
+                                    </button>
                                 </td>
                             </tr>
                         ))}
                         {owners.length === 0 && (
                             <tr>
-                                <td colSpan={4} className="px-6 py-8 text-center text-slate-500 text-sm">
+                                <td colSpan={5} className="px-6 py-8 text-center text-slate-500 text-sm">
                                     No hay propietarios registrados.
                                 </td>
                             </tr>
@@ -71,6 +98,25 @@ export function OwnerList({ tenantId }: { tenantId: string }) {
                     </tbody>
                 </table>
             </div>
+
+            <InlineModal isOpen={isCreating} onClose={() => setIsCreating(false)} title="Nuevo Propietario">
+                <OwnerForm
+                    tenantId={tenantId}
+                    onSuccess={handleCreateSuccess}
+                    onCancel={() => setIsCreating(false)}
+                />
+            </InlineModal>
+
+            <InlineModal isOpen={!!editingOwner} onClose={() => setEditingOwner(null)} title="Editar Propietario">
+                {editingOwner && (
+                    <OwnerForm
+                        tenantId={tenantId}
+                        initialData={editingOwner}
+                        onSuccess={handleEditSuccess}
+                        onCancel={() => setEditingOwner(null)}
+                    />
+                )}
+            </InlineModal>
         </div>
     );
 }

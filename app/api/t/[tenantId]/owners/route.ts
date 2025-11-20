@@ -33,8 +33,33 @@ export async function POST(request: Request, { params }: { params: { tenantId: s
             createdAt: new Date().toISOString()
         });
 
-        return NextResponse.json({ id: docRef.id, ...body });
+        return NextResponse.json({ id: docRef.id, name, identificationNumber, email, phone });
     } catch (error) {
-        return NextResponse.json({ error: 'Failed to create owner' }, { status: 500 });
+        console.error('Error creating owner:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
+}
+
+export async function PUT(request: Request, { params }: { params: { tenantId: string } }) {
+    try {
+        const { tenantId } = params;
+        const body = await request.json();
+        const { id, name, identificationNumber, email, phone } = body;
+
+        if (!id || !name) {
+            return NextResponse.json({ error: 'ID and Name are required' }, { status: 400 });
+        }
+
+        await db.collection(`tCollections/${tenantId}/owners`).doc(id).update({
+            name,
+            identificationNumber: identificationNumber || '',
+            email: email || '',
+            phone: phone || ''
+        });
+
+        return NextResponse.json({ id, name, identificationNumber, email, phone });
+    } catch (error) {
+        console.error('Error updating owner:', error);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }
 }

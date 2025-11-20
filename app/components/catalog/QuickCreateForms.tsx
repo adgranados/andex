@@ -137,25 +137,36 @@ export function TypeForm({ tenantId, onSuccess, onCancel, initialData }: TypeFor
     );
 }
 
-export function OwnerForm({ tenantId, onSuccess, onCancel }: BaseFormProps) {
-    const [name, setName] = useState('');
-    const [identificationNumber, setIdentificationNumber] = useState('');
-    const [email, setEmail] = useState('');
-    const [phone, setPhone] = useState('');
+interface OwnerFormProps extends BaseFormProps {
+    initialData?: { id: string; name: string; identificationNumber?: string; email?: string; phone?: string };
+}
+
+export function OwnerForm({ tenantId, onSuccess, onCancel, initialData }: OwnerFormProps) {
+    const [name, setName] = useState(initialData?.name || '');
+    const [identificationNumber, setIdentificationNumber] = useState(initialData?.identificationNumber || '');
+    const [email, setEmail] = useState(initialData?.email || '');
+    const [phone, setPhone] = useState(initialData?.phone || '');
     const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         try {
+            const method = initialData ? 'PUT' : 'POST';
+            const body = initialData
+                ? { id: initialData.id, name, identificationNumber, email, phone }
+                : { name, identificationNumber, email, phone };
+
             const res = await fetch(`/api/t/${tenantId}/owners`, {
-                method: 'POST',
+                method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, identificationNumber, email, phone }),
+                body: JSON.stringify(body),
             });
             if (res.ok) {
                 const newItem = await res.json();
                 onSuccess(newItem);
+            } else {
+                console.error('Failed to save owner');
             }
         } catch (error) {
             console.error(error);
