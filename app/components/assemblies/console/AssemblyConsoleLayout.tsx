@@ -2,6 +2,7 @@
 
 import { AttendancePanel } from './AttendancePanel';
 import { VotingPanel } from './VotingPanel';
+import { useRouter } from 'next/navigation';
 
 interface AssemblyConsoleLayoutProps {
     tenantId: string;
@@ -11,6 +12,24 @@ interface AssemblyConsoleLayoutProps {
 }
 
 export function AssemblyConsoleLayout({ tenantId, assemblyId, assemblyTitle, assemblyCode }: AssemblyConsoleLayoutProps) {
+    const router = useRouter();
+
+    const handleCloseAssembly = async () => {
+        if (!confirm('¿Estás seguro de que deseas finalizar la asamblea? Esta acción no se puede deshacer.')) return;
+
+        try {
+            const res = await fetch(`/api/t/${tenantId}/assemblies/${assemblyId}/close`, {
+                method: 'POST'
+            });
+
+            if (res.ok) {
+                router.push(`/t/${tenantId}/assemblies`);
+            }
+        } catch (error) {
+            console.error(error);
+        }
+    };
+
     return (
         <div className="flex flex-col h-screen bg-slate-950 overflow-hidden">
             {/* Header */}
@@ -23,7 +42,10 @@ export function AssemblyConsoleLayout({ tenantId, assemblyId, assemblyTitle, ass
                     </div>
                 </div>
                 <div>
-                    <button className="bg-red-900/50 hover:bg-red-900 text-red-200 border border-red-800 px-4 py-2 rounded-md text-sm transition-colors">
+                    <button
+                        onClick={handleCloseAssembly}
+                        className="bg-red-900/50 hover:bg-red-900 text-red-200 border border-red-800 px-4 py-2 rounded-md text-sm transition-colors"
+                    >
                         Finalizar Asamblea
                     </button>
                 </div>
