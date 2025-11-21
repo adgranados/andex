@@ -42,8 +42,8 @@ export default function JoinAssemblyPage({ params }: { params: { tenantId: strin
         return () => clearTimeout(timeoutId);
     }, [code, params.tenantId]);
 
-    const handleJoin = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleJoin = async (e?: any) => {
+        if (e && e.preventDefault) e.preventDefault();
         setLoading(true);
         setError('');
 
@@ -58,6 +58,7 @@ export default function JoinAssemblyPage({ params }: { params: { tenantId: strin
                 const data = await res.json();
                 // Save session
                 localStorage.setItem(`assembly_session_${data.assemblyId}`, JSON.stringify({
+                    assemblyId: data.assemblyId,
                     propertyId: data.propertyId,
                     propertyName: data.propertyName
                 }));
@@ -81,7 +82,7 @@ export default function JoinAssemblyPage({ params }: { params: { tenantId: strin
                     <p className="text-slate-400">Ingresa el código y selecciona tu propiedad</p>
                 </div>
 
-                <form onSubmit={handleJoin} className="space-y-6">
+                <div className="space-y-6">
                     {error && (
                         <div className="bg-red-900/50 text-red-200 p-3 rounded border border-red-800 text-sm text-center">
                             {error}
@@ -96,6 +97,7 @@ export default function JoinAssemblyPage({ params }: { params: { tenantId: strin
                             type="text"
                             value={code}
                             onChange={(e) => setCode(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleJoin(e)}
                             className="w-full bg-slate-800 border border-white/10 rounded px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-slate-600"
                             placeholder="Ej: ASM-2025-1234"
                             required
@@ -110,6 +112,7 @@ export default function JoinAssemblyPage({ params }: { params: { tenantId: strin
                             <select
                                 value={propertyIdentifier}
                                 onChange={(e) => setPropertyIdentifier(e.target.value)}
+                                onKeyDown={(e) => e.key === 'Enter' && handleJoin(e)}
                                 className="w-full bg-slate-800 border border-white/10 rounded px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                                 required
                             >
@@ -124,6 +127,7 @@ export default function JoinAssemblyPage({ params }: { params: { tenantId: strin
                                     type="text"
                                     value={propertyIdentifier}
                                     onChange={(e) => setPropertyIdentifier(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleJoin(e)}
                                     className="w-full bg-slate-800 border border-white/10 rounded px-3 py-2 text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent placeholder-slate-600 disabled:opacity-50"
                                     placeholder={loadingProperties ? "Buscando propiedades..." : "Ingresa el nombre de tu propiedad"}
                                     required
@@ -144,13 +148,14 @@ export default function JoinAssemblyPage({ params }: { params: { tenantId: strin
                     </div>
 
                     <button
-                        type="submit"
+                        type="button"
+                        onClick={handleJoin}
                         disabled={loading || loadingProperties}
                         className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? 'Ingresando...' : 'Ingresar'}
                     </button>
-                </form>
+                </div>
             </div>
         </div>
     );

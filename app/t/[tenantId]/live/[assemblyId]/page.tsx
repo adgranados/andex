@@ -19,7 +19,7 @@ export default function LiveAssemblyPage({ params }: { params: { tenantId: strin
 
     useEffect(() => {
         // Load session
-        const stored = localStorage.getItem(`andex_session_${params.tenantId}`);
+        const stored = localStorage.getItem(`assembly_session_${params.assemblyId}`);
         if (!stored) {
             router.push(`/t/${params.tenantId}/join`);
             return;
