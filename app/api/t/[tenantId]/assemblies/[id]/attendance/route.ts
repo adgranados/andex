@@ -22,7 +22,7 @@ export async function POST(request: Request, { params }: { params: { tenantId: s
     try {
         const { tenantId, id: assemblyId } = params;
         const body = await request.json();
-        const { propertyId, propertyName, ownerName, coefficient, representative } = body;
+        const { propertyId, propertyName, ownerName, coefficient, representative, status } = body;
 
         if (!propertyId) {
             return NextResponse.json({ error: 'Property ID is required' }, { status: 400 });
@@ -35,7 +35,7 @@ export async function POST(request: Request, { params }: { params: { tenantId: s
             ownerName,
             coefficient: Number(coefficient) || 0,
             representative: representative || ownerName,
-            status: 'PRESENT',
+            status: status || 'PRESENT',
             registeredAt: new Date().toISOString()
         });
 

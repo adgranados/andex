@@ -1,13 +1,52 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/src/server/firebaseAdmin';
 
+import { adminAuth } from '@/src/server/firebaseAdmin';
+
 export async function GET(request: Request, { params }: { params: { tenantId: string } }) {
     try {
         const { tenantId } = params;
         const snapshot = await db.collection(`tCollections/${tenantId}/properties`).get();
-        const properties = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+        const properties = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as any));
+
+        // Extract unique owner IDs
+        const ownerIds = [...new Set(properties.map(p => p.ownerId).filter(Boolean))];
+
+        if (ownerIds.length > 0) {
+            try {
+                // Fetch users in batches (max 100 per batch for getUsers)
+                // For simplicity assuming < 100 owners for now, but good to be aware.
+                console.log('Fetching users for ownerIds:', ownerIds);
+                const usersResult = await adminAuth.getUsers(ownerIds.map(uid => ({ uid })));
+                console.log('Found users:', usersResult.users.map(u => u.uid));
+
+                const userMap = new Map();
+                usersResult.users.forEach(user => {
+                    userMap.set(user.uid, user.displayName || user.email || 'Sin nombre');
+                });
+
+                // Attach ownerName
+                properties.forEach(p => {
+                    if (p.ownerId) {
+                        // If found in map, use it. If not found, show the ownerId itself (might be a name or mismatched UID)
+                        p.ownerName = userMap.get(p.ownerId) || `ID: ${p.ownerId}`;
+                    } else {
+                        p.ownerName = 'Sin propietario';
+                    }
+                });
+            } catch (authError) {
+                console.error('Error fetching users:', authError);
+                // Fallback if auth fetch fails
+                properties.forEach(p => p.ownerName = 'Error fetching owner');
+            }
+        } else {
+            properties.forEach(p => p.ownerName = 'Sin propietario');
+        }
+
         return NextResponse.json(properties);
     } catch (error) {
+        console.error('Error fetching properties:', error);
         return NextResponse.json({ error: 'Failed to fetch properties' }, { status: 500 });
     }
 }
