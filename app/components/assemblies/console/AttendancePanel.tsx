@@ -77,7 +77,7 @@ export function AttendancePanel({ tenantId, assemblyId }: { tenantId: string; as
 
     const filteredProperties = properties.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.ownerName.toLowerCase().includes(searchTerm.toLowerCase())
+        (p.ownerName && p.ownerName.toLowerCase().includes(searchTerm.toLowerCase()))
     );
 
     const totalCoefficient = properties.reduce((sum, p) => sum + (p.coefficient || 0), 0);

@@ -26,7 +26,11 @@ export async function POST(request: Request, { params }: { params: { tenantId: s
         const assemblyData = assemblyDoc.data();
 
         if (assemblyData.status === 'CLOSED') {
-            return NextResponse.json({ error: 'Assembly is closed' }, { status: 400 });
+            return NextResponse.json({ error: 'La asamblea ha finalizado' }, { status: 400 });
+        }
+
+        if (assemblyData.status === 'DRAFT') {
+            return NextResponse.json({ error: 'La asamblea aún no ha iniciado' }, { status: 400 });
         }
 
         // 2. Find Property by Name (or ID if we were strict, but Name for MVP as per plan)
