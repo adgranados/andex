@@ -30,15 +30,34 @@ export function AssemblyConsoleLayout({ tenantId, assemblyId, assemblyTitle, ass
         }
     };
 
+    const handleCopyLink = () => {
+        const url = `${window.location.origin}/t/${tenantId}/join`;
+        const text = `Únete a la asamblea aquí: ${url}\nCódigo: ${assemblyCode}`;
+        navigator.clipboard.writeText(text);
+        alert('Link copiado al portapapeles');
+    };
+
     return (
         <div className="flex flex-col h-screen bg-slate-950 overflow-hidden">
             {/* Header */}
             <header className="h-16 bg-slate-900 border-b border-white/10 flex items-center justify-between px-6 shrink-0">
                 <div>
                     <h1 className="text-xl font-bold text-white">{assemblyTitle}</h1>
-                    <div className="flex items-center gap-2 text-sm text-slate-400">
-                        <span>Código de acceso:</span>
-                        <span className="font-mono text-indigo-400 font-bold text-lg tracking-wider">{assemblyCode}</span>
+                    <div className="flex items-center gap-4 text-sm text-slate-400">
+                        <div className="flex items-center gap-2">
+                            <span>Código de acceso:</span>
+                            <span className="font-mono text-indigo-400 font-bold text-lg tracking-wider">{assemblyCode}</span>
+                        </div>
+                        <button
+                            onClick={handleCopyLink}
+                            className="text-xs bg-slate-800 hover:bg-slate-700 text-indigo-300 px-2 py-1 rounded border border-slate-700 transition-colors flex items-center gap-1"
+                            title="Copiar información de acceso"
+                        >
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+                            </svg>
+                            Copiar Link
+                        </button>
                     </div>
                 </div>
                 <div>
