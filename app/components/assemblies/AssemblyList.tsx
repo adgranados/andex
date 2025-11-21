@@ -111,7 +111,12 @@ export function AssemblyList({ tenantId }: { tenantId: string }) {
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">{getTypeBadge(assembly.type)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap">{getStatusBadge(assembly.status)}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button className="text-indigo-400 hover:text-indigo-300 mr-4">Gestionar</button>
+                                        <a
+                                            href={`/t/${tenantId}/assemblies/${assembly.id}/console`}
+                                            className="text-indigo-400 hover:text-indigo-300 mr-4"
+                                        >
+                                            Gestionar
+                                        </a>
                                     </td>
                                 </tr>
                             ))
