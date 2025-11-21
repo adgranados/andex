@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { db } from '@/src/client/firebaseClient';
+import { db, auth } from '@/src/client/firebaseClient';
 import { collection, onSnapshot } from 'firebase/firestore';
 
 interface Property {
@@ -35,32 +35,29 @@ export function AttendancePanel({ tenantId, assemblyId }: { tenantId: string; as
             } finally {
                 // Only set loading to false if we're not waiting for attendance (which is handled by onSnapshot)
                 // But we want to show the UI as soon as properties are loaded, even if attendance is still syncing.
-                // However, for quorum calculation we need both.
-                // Let's keep loading true until we get the first snapshot?
-                // Actually, onSnapshot fires pretty quickly.
+                setLoading(false); // Set loading to false after initial properties and attendance are fetched
             }
         };
 
+        // Initial fetch
         fetchData();
 
-        // Real-time attendance listener
-        const attendanceRef = collection(db, `tCollections/${tenantId}/assemblies/${assemblyId}/attendance`);
-        const unsubscribe = onSnapshot(attendanceRef, (snapshot) => {
-            const attMap: Record<string, string> = {};
-            snapshot.forEach((doc) => {
-                const data = doc.data() as AttendanceRecord;
-                // Ensure we use the document ID or the propertyId field. 
-                // The API saves it with doc(propertyId), so doc.id is the propertyId.
-                attMap[doc.id] = data.status || 'PRESENT';
-            });
-            setAttendance(attMap);
-            setLoading(false);
-        }, (error) => {
-            console.error("Error listening to attendance:", error);
-            setLoading(false);
-        });
+        // Polling every 3 seconds to ensure updates without relying on Firestore rules
+        const intervalId = setInterval(() => {
+            fetch(`/api/t/${tenantId}/assemblies/${assemblyId}/attendance`)
+                .then(res => {
+                    if (res.ok) return res.json();
+                    throw new Error('Failed to fetch');
+                })
+                .then((data: AttendanceRecord[]) => {
+                    const attMap: Record<string, string> = {};
+                    data.forEach(r => attMap[r.propertyId] = r.status);
+                    setAttendance(attMap);
+                })
+                .catch(err => console.error('Polling error:', err));
+        }, 3000);
 
-        return () => unsubscribe();
+        return () => clearInterval(intervalId);
     }, [tenantId, assemblyId]);
 
     const handleToggleAttendance = async (property: Property) => {
@@ -105,12 +102,42 @@ export function AttendancePanel({ tenantId, assemblyId }: { tenantId: string; as
 
     const quorumPercentage = totalCoefficient > 0 ? (presentCoefficient / totalCoefficient) * 100 : 0;
 
+    const handleManualRefresh = async () => {
+        console.log('Manual refresh clicked');
+        console.log('Current User:', auth.currentUser);
+        if (auth.currentUser) {
+            const token = await auth.currentUser.getIdTokenResult();
+            console.log('Claims:', token.claims);
+        }
+
+        try {
+            const res = await fetch(`/api/t/${tenantId}/assemblies/${assemblyId}/attendance`);
+            if (res.ok) {
+                const data: AttendanceRecord[] = await res.json();
+                console.log('API Attendance Data:', data);
+                const attMap: Record<string, string> = {};
+                data.forEach(r => attMap[r.propertyId] = r.status);
+                setAttendance(attMap);
+            }
+        } catch (error) {
+            console.error('Manual fetch error:', error);
+        }
+    };
+
     if (loading) return <div className="text-slate-400">Cargando asistencia...</div>;
 
     return (
         <div className="flex flex-col h-full bg-slate-900 border-r border-white/10">
             <div className="p-4 border-b border-white/10 bg-slate-800/50">
-                <h3 className="text-lg font-semibold text-white mb-2">Quórum</h3>
+                <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-lg font-semibold text-white">Quórum</h3>
+                    <button onClick={handleManualRefresh} className="text-xs text-indigo-400 hover:text-indigo-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4 inline-block mr-1">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.181m0 0l-3.181 3.182M16.023 9.348L12.842 6.167m0 0l3.181-3.182A4.5 4.5 0 0118.905 4.5H21.5a3 3 0 013 3v.585M2.985 19.644A4.5 4.5 0 005.09 21.5h.585a3 3 0 003-3v-.585m-4.992 0l3.181-3.181M12.842 6.167L9.66 2.985M9.66 2.985A4.5 4.5 0 007.5 4.5H4.5a3 3 0 00-3 3v.585m4.992 0l-3.181 3.181M12.842 6.167L9.66 2.985" />
+                        </svg>
+                        Refrescar
+                    </button>
+                </div>
                 <div className="w-full bg-slate-700 rounded-full h-4 mb-1">
                     <div
                         className="bg-green-500 h-4 rounded-full transition-all duration-500"
