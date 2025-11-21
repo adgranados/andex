@@ -57,11 +57,17 @@ export async function POST(request: Request, { params }: { params: { tenantId: s
             registeredAt: new Date().toISOString()
         });
 
+        // 4. Get Tenant Name
+        const tenantDoc = await db.collection('tenants').doc(tenantId).get();
+        const tenantName = tenantDoc.exists ? tenantDoc.data()?.name : 'Unknown Tenant';
+
         return NextResponse.json({
             success: true,
             assemblyId,
+            assemblyCode: assemblyData.code,
             propertyId,
-            propertyName: propertyData.name
+            propertyName: propertyData.name,
+            tenantName
         });
 
     } catch (error) {

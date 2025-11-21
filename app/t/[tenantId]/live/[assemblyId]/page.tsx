@@ -105,12 +105,21 @@ export default function LiveAssemblyPage({ params }: { params: { tenantId: strin
     return (
         <div className="min-h-screen bg-slate-950 flex flex-col">
             {/* Header */}
-            <header className="bg-slate-900 border-b border-white/10 p-4 flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                    <span className="text-green-400 text-sm font-medium">En Vivo</span>
+            <header className="bg-slate-900 border-b border-white/10 p-4 flex flex-col md:flex-row justify-between items-center gap-4">
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                        <span className="text-green-400 text-sm font-medium">En Vivo</span>
+                    </div>
+                    <div className="h-4 w-px bg-white/10"></div>
+                    <div className="text-slate-400 text-sm">
+                        {session?.tenantName} <span className="text-white/20 mx-1">•</span> {session?.assemblyCode}
+                    </div>
                 </div>
-                <div className="text-white font-medium">{session?.propertyName}</div>
+                <div className="flex items-center gap-2 bg-slate-800 px-3 py-1.5 rounded-full border border-white/5">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
+                    <span className="text-white font-medium text-sm">{session?.propertyName}</span>
+                </div>
             </header>
 
             {/* Main Content */}

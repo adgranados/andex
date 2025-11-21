@@ -59,8 +59,10 @@ export default function JoinAssemblyPage({ params }: { params: { tenantId: strin
                 // Save session
                 localStorage.setItem(`assembly_session_${data.assemblyId}`, JSON.stringify({
                     assemblyId: data.assemblyId,
+                    assemblyCode: data.assemblyCode,
                     propertyId: data.propertyId,
-                    propertyName: data.propertyName
+                    propertyName: data.propertyName,
+                    tenantName: data.tenantName
                 }));
                 router.push(`/t/${params.tenantId}/live/${data.assemblyId}`);
             } else {
