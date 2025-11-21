@@ -13,9 +13,11 @@ export default async function TenantLayout({
 
     return (
         <AuthGuard>
-            <div className="flex min-h-screen bg-slate-950 text-slate-100">
-                <Sidebar tenantId={params.tenantId} tenantName={tenant?.name} />
-                <div className="ml-64 flex-1 p-8">
+            <div className="flex min-h-screen bg-slate-950 text-slate-100 print:bg-white print:text-black">
+                <div className="print:hidden">
+                    <Sidebar tenantId={params.tenantId} tenantName={tenant?.name} />
+                </div>
+                <div className="ml-64 flex-1 p-8 print:ml-0 print:p-0">
                     {children}
                 </div>
             </div>
