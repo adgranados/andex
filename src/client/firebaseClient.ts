@@ -18,6 +18,9 @@ function getFirebaseApp(): FirebaseApp {
   return getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 }
 
+import { getFirestore } from 'firebase/firestore';
+
 export const app = getFirebaseApp();
 export const auth = getAuth(app);
+export const db = getFirestore(app);
 export const googleProvider = new GoogleAuthProvider();

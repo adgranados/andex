@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { db } from '@/src/client/firebaseClient';
+import { collection, onSnapshot } from 'firebase/firestore';
 
 interface Property {
     id: string;
@@ -20,41 +22,56 @@ export function AttendancePanel({ tenantId, assemblyId }: { tenantId: string; as
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
 
-    // Fetch all properties and current attendance
+    // Fetch properties (static) and subscribe to attendance (real-time)
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [propsRes, attRes] = await Promise.all([
-                    fetch(`/api/t/${tenantId}/properties`),
-                    fetch(`/api/t/${tenantId}/assemblies/${assemblyId}/attendance`)
-                ]);
-
+                const propsRes = await fetch(`/api/t/${tenantId}/properties`);
                 if (propsRes.ok) {
                     setProperties(await propsRes.json());
                 }
-                if (attRes.ok) {
-                    const attData: AttendanceRecord[] = await attRes.json();
-                    const attMap: Record<string, string> = {};
-                    attData.forEach(r => attMap[r.propertyId] = r.status);
-                    setAttendance(attMap);
-                }
             } catch (error) {
-                console.error(error);
+                console.error('Error fetching properties:', error);
             } finally {
-                setLoading(false);
+                // Only set loading to false if we're not waiting for attendance (which is handled by onSnapshot)
+                // But we want to show the UI as soon as properties are loaded, even if attendance is still syncing.
+                // However, for quorum calculation we need both.
+                // Let's keep loading true until we get the first snapshot?
+                // Actually, onSnapshot fires pretty quickly.
             }
         };
+
         fetchData();
+
+        // Real-time attendance listener
+        const attendanceRef = collection(db, `tCollections/${tenantId}/assemblies/${assemblyId}/attendance`);
+        const unsubscribe = onSnapshot(attendanceRef, (snapshot) => {
+            const attMap: Record<string, string> = {};
+            snapshot.forEach((doc) => {
+                const data = doc.data() as AttendanceRecord;
+                // Ensure we use the document ID or the propertyId field. 
+                // The API saves it with doc(propertyId), so doc.id is the propertyId.
+                attMap[doc.id] = data.status || 'PRESENT';
+            });
+            setAttendance(attMap);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error listening to attendance:", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
     }, [tenantId, assemblyId]);
 
     const handleToggleAttendance = async (property: Property) => {
         const isPresent = attendance[property.id] === 'PRESENT';
-        // Ideally we would have an endpoint to remove attendance too, but for now we just add 'PRESENT'
-        // or we could implement a toggle. For this MVP let's assume we only mark present manually here.
 
         if (isPresent) return; // Already present
 
         try {
+            // We still use the API to write, to keep logic centralized (and maybe for server-side validation/logging)
+            // Or we could write directly to Firestore since we are using client SDK.
+            // Using API is safer for business logic.
             const res = await fetch(`/api/t/${tenantId}/assemblies/${assemblyId}/attendance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -67,9 +84,10 @@ export function AttendancePanel({ tenantId, assemblyId }: { tenantId: string; as
                 })
             });
 
-            if (res.ok) {
-                setAttendance(prev => ({ ...prev, [property.id]: 'PRESENT' }));
+            if (!res.ok) {
+                console.error('Failed to mark attendance');
             }
+            // No need to manually update state, onSnapshot will handle it
         } catch (error) {
             console.error(error);
         }
