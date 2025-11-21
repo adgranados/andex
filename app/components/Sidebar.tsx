@@ -15,6 +15,8 @@ export function Sidebar({ tenantId, tenantName }: SidebarProps) {
 
     const links = [
         { href: `/t/${tenantId}/dashboard`, label: 'Dashboard', icon: 'Home' },
+        { href: `/t/${tenantId}/catalog`, label: 'Catálogo', icon: 'Folder' }, // Added based on existing Link below
+        { href: `/t/${tenantId}/assemblies`, label: 'Asambleas', icon: 'UserGroup' }, // New link
         { href: `/t/${tenantId}/settings`, label: 'Settings', icon: 'Settings' },
     ];
 
@@ -39,8 +41,8 @@ export function Sidebar({ tenantId, tenantName }: SidebarProps) {
                     <Link
                         href={`/t/${tenantId}/dashboard`}
                         className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${pathname.endsWith('/dashboard')
-                                ? 'bg-indigo-500/10 text-indigo-400'
-                                : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                            ? 'bg-indigo-500/10 text-indigo-400'
+                            : 'text-slate-400 hover:bg-white/5 hover:text-white'
                             }`}
                     >
                         Dashboard
@@ -48,17 +50,26 @@ export function Sidebar({ tenantId, tenantName }: SidebarProps) {
                     <Link
                         href={`/t/${tenantId}/catalog`}
                         className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${pathname.includes('/catalog')
-                                ? 'bg-indigo-500/10 text-indigo-400'
-                                : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                            ? 'bg-indigo-500/10 text-indigo-400'
+                            : 'text-slate-400 hover:bg-white/5 hover:text-white'
                             }`}
                     >
                         Catálogo Maestro
                     </Link>
                     <Link
+                        href={`/t/${tenantId}/assemblies`}
+                        className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${pathname.includes('/assemblies')
+                            ? 'bg-indigo-500/10 text-indigo-400'
+                            : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                            }`}
+                    >
+                        Asambleas
+                    </Link>
+                    <Link
                         href={`/t/${tenantId}/settings`}
                         className={`group flex items-center rounded-md px-2 py-2 text-sm font-medium ${pathname.endsWith('/settings')
-                                ? 'bg-indigo-500/10 text-indigo-400'
-                                : 'text-slate-400 hover:bg-white/5 hover:text-white'
+                            ? 'bg-indigo-500/10 text-indigo-400'
+                            : 'text-slate-400 hover:bg-white/5 hover:text-white'
                             }`}
                     >
                         Settings
