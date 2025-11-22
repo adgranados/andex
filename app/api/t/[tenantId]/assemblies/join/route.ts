@@ -71,6 +71,7 @@ export async function POST(request: Request, { params }: { params: { tenantId: s
             assemblyCode: assemblyData.code,
             propertyId,
             propertyName: propertyData.name,
+            coefficient: propertyData.coefficient || 0, // ✅ Include coefficient for session storage
             tenantName
         });
 

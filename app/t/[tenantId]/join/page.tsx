@@ -56,12 +56,13 @@ export default function JoinAssemblyPage({ params }: { params: { tenantId: strin
 
             if (res.ok) {
                 const data = await res.json();
-                // Save session
+                // ✅ Save session with coefficient to avoid fetching properties later
                 localStorage.setItem(`assembly_session_${data.assemblyId}`, JSON.stringify({
                     assemblyId: data.assemblyId,
                     assemblyCode: data.assemblyCode,
                     propertyId: data.propertyId,
                     propertyName: data.propertyName,
+                    coefficient: data.coefficient, // ✅ Store coefficient
                     tenantName: data.tenantName
                 }));
                 router.push(`/t/${params.tenantId}/live/${data.assemblyId}`);
