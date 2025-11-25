@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { InlineModal } from './InlineModal';
 import { OwnerForm } from './QuickCreateForms';
 
@@ -17,6 +18,10 @@ export function OwnerList({ tenantId }: { tenantId: string }) {
     const [loading, setLoading] = useState(true);
     const [isCreating, setIsCreating] = useState(false);
     const [editingOwner, setEditingOwner] = useState<Owner | null>(null);
+
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const pathname = usePathname();
 
     const fetchOwners = () => {
         setLoading(true);
@@ -35,6 +40,26 @@ export function OwnerList({ tenantId }: { tenantId: string }) {
     useEffect(() => {
         fetchOwners();
     }, [tenantId]);
+
+    // Check for ownerId in URL to open edit modal automatically
+    useEffect(() => {
+        const ownerIdParam = searchParams.get('ownerId');
+        if (ownerIdParam && owners.length > 0 && !editingOwner) {
+            const ownerToEdit = owners.find(o => o.id === ownerIdParam);
+            if (ownerToEdit) {
+                setEditingOwner(ownerToEdit);
+            }
+        }
+    }, [searchParams, owners]);
+
+    const handleCloseModal = () => {
+        setEditingOwner(null);
+        setIsCreating(false);
+        // Remove ownerId from URL without refreshing
+        const params = new URLSearchParams(searchParams);
+        params.delete('ownerId');
+        router.replace(`${pathname}?${params.toString()}`);
+    };
 
     const handleCreateSuccess = (newOwner: Owner) => {
         setOwners([...owners, newOwner]);
@@ -99,21 +124,21 @@ export function OwnerList({ tenantId }: { tenantId: string }) {
                 </table>
             </div>
 
-            <InlineModal isOpen={isCreating} onClose={() => setIsCreating(false)} title="Nuevo Propietario">
+            <InlineModal isOpen={isCreating} onClose={handleCloseModal} title="Nuevo Propietario">
                 <OwnerForm
                     tenantId={tenantId}
                     onSuccess={handleCreateSuccess}
-                    onCancel={() => setIsCreating(false)}
+                    onCancel={handleCloseModal}
                 />
             </InlineModal>
 
-            <InlineModal isOpen={!!editingOwner} onClose={() => setEditingOwner(null)} title="Editar Propietario">
+            <InlineModal isOpen={!!editingOwner} onClose={handleCloseModal} title="Editar Propietario">
                 {editingOwner && (
                     <OwnerForm
                         tenantId={tenantId}
                         initialData={editingOwner}
                         onSuccess={handleEditSuccess}
-                        onCancel={() => setEditingOwner(null)}
+                        onCancel={handleCloseModal}
                     />
                 )}
             </InlineModal>

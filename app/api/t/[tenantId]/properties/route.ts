@@ -21,25 +21,31 @@ export async function GET(request: Request, { params }: { params: { tenantId: st
 
                 if (ownerIds.length > 0) {
                     try {
-                        console.log('Fetching users for ownerIds:', ownerIds);
-                        const usersResult = await adminAuth.getUsers(ownerIds.map(uid => ({ uid })));
-                        console.log('Found users:', usersResult.users.map(u => u.uid));
+                        // ✅ Fetch owners from the 'owners' collection, NOT adminAuth
+                        // We could use 'in' query but for now let's fetch all owners to be safe and simple
+                        // or better, fetch only needed ones if possible. 
+                        // Given we might have many owners, let's try to fetch all owners and cache them too?
+                        // Or just fetch the ones we need. 'in' query is limited to 10 (or 30).
+                        // Let's fetch all owners for now, assuming < 1000 owners.
+                        // Ideally we should cache owners separately.
 
-                        const userMap = new Map();
-                        usersResult.users.forEach(user => {
-                            userMap.set(user.uid, user.displayName || user.email || 'Sin nombre');
+                        const ownersSnapshot = await db.collection(`tCollections/${tenantId}/owners`).get();
+                        const ownerMap = new Map();
+                        ownersSnapshot.docs.forEach(doc => {
+                            const data = doc.data();
+                            ownerMap.set(doc.id, data.name || 'Sin nombre');
                         });
 
                         // Attach ownerName
                         properties.forEach(p => {
                             if (p.ownerId) {
-                                p.ownerName = userMap.get(p.ownerId) || `ID: ${p.ownerId}`;
+                                p.ownerName = ownerMap.get(p.ownerId) || `ID: ${p.ownerId}`;
                             } else {
                                 p.ownerName = 'Sin propietario';
                             }
                         });
-                    } catch (authError) {
-                        console.error('Error fetching users:', authError);
+                    } catch (error) {
+                        console.error('Error fetching owners:', error);
                         properties.forEach(p => p.ownerName = 'Error fetching owner');
                     }
                 } else {

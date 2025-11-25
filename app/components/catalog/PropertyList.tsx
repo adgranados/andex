@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { PropertyForm } from './PropertyForm';
 
 import { InlineModal } from './InlineModal';
@@ -12,6 +13,7 @@ interface Property {
     zoneId: string;
     typeId: string;
     ownerId: string;
+    ownerName?: string; // ✅ Added ownerName
     coefficient?: number;
 }
 
@@ -40,12 +42,14 @@ export function PropertyList({ tenantId }: { tenantId: string }) {
     }, [tenantId]);
 
     const handleCreateSuccess = (newProperty: Property) => {
-        setProperties([...properties, newProperty]);
+        // Refresh list to get owner name properly resolved from server if needed, 
+        // or just add it. For now, let's refresh to be safe as ownerName comes from server resolution.
+        fetchProperties();
         setIsCreating(false);
     };
 
     const handleEditSuccess = (updatedProperty: Property) => {
-        setProperties(properties.map(p => p.id === updatedProperty.id ? updatedProperty : p));
+        fetchProperties();
         setEditingProperty(null);
     };
 
@@ -68,6 +72,7 @@ export function PropertyList({ tenantId }: { tenantId: string }) {
                     <thead className="bg-white/5">
                         <tr>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Nombre</th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Propietario</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Dirección</th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Coeficiente</th>
                             <th scope="col" className="relative px-6 py-3"><span className="sr-only">Acciones</span></th>
@@ -77,6 +82,18 @@ export function PropertyList({ tenantId }: { tenantId: string }) {
                         {properties.map((property) => (
                             <tr key={property.id} className="hover:bg-white/5 transition-colors">
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-white">{property.name}</td>
+                                <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-300">
+                                    {property.ownerId ? (
+                                        <Link
+                                            href={`/t/${tenantId}/catalog?tab=owners&ownerId=${property.ownerId}`}
+                                            className="text-indigo-400 hover:text-indigo-300 hover:underline"
+                                        >
+                                            {property.ownerName || 'Sin nombre'}
+                                        </Link>
+                                    ) : (
+                                        <span className="text-slate-500">Sin propietario</span>
+                                    )}
+                                </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{property.address || '-'}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-400">{property.coefficient || '-'}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -91,7 +108,7 @@ export function PropertyList({ tenantId }: { tenantId: string }) {
                         ))}
                         {properties.length === 0 && (
                             <tr>
-                                <td colSpan={3} className="px-6 py-8 text-center text-slate-500 text-sm">
+                                <td colSpan={5} className="px-6 py-8 text-center text-slate-500 text-sm">
                                     No hay propiedades registradas.
                                 </td>
                             </tr>
