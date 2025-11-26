@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { InlineModal } from '@/app/components/catalog/InlineModal';
+import { QuestionCard } from './QuestionCard';
 
 interface Question {
     id: string;
@@ -14,8 +15,6 @@ export function VotingPanel({ tenantId, assemblyId }: { tenantId: string; assemb
     const [questions, setQuestions] = useState<Question[]>([]);
     const [isCreating, setIsCreating] = useState(false);
     const [newQuestionTitle, setNewQuestionTitle] = useState('');
-    const [activeTab, setActiveTab] = useState<'voting' | 'results'>('voting');
-    const [results, setResults] = useState<Record<string, any>>({});
 
     // Simple options for MVP
     const defaultOptions = [
@@ -27,28 +26,17 @@ export function VotingPanel({ tenantId, assemblyId }: { tenantId: string; assemb
     const fetchQuestions = async () => {
         const res = await fetch(`/api/t/${tenantId}/assemblies/${assemblyId}/questions`);
         if (res.ok) {
-            setQuestions(await res.json());
+            const data = await res.json();
+            // Sort by createdAt desc (newest first)
+            // Assuming the API returns them sorted or we sort here. 
+            // The API code I saw earlier does `.orderBy('createdAt', 'desc')`, so it should be fine.
+            setQuestions(data);
         }
     };
 
     useEffect(() => {
         fetchQuestions();
     }, [tenantId, assemblyId]);
-
-    const fetchResults = async (questionId: string) => {
-        const res = await fetch(`/api/t/${tenantId}/assemblies/${assemblyId}/questions/${questionId}/results`);
-        if (res.ok) {
-            const data = await res.json();
-            setResults(prev => ({ ...prev, [questionId]: data }));
-        }
-    };
-
-    // Fetch results for closed questions when tab changes
-    useEffect(() => {
-        if (activeTab === 'results') {
-            questions.filter(q => q.status === 'CLOSED').forEach(q => fetchResults(q.id));
-        }
-    }, [activeTab, questions]);
 
     const handleCreateQuestion = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -93,98 +81,36 @@ export function VotingPanel({ tenantId, assemblyId }: { tenantId: string; assemb
     return (
         <div className="flex flex-col h-full bg-slate-950">
             <div className="p-4 border-b border-white/10 flex justify-between items-center">
-                <div className="flex gap-4">
-                    <button
-                        onClick={() => setActiveTab('voting')}
-                        className={`text-sm font-medium ${activeTab === 'voting' ? 'text-white border-b-2 border-indigo-500' : 'text-slate-400'}`}
-                    >
-                        Votaciones
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('results')}
-                        className={`text-sm font-medium ${activeTab === 'results' ? 'text-white border-b-2 border-indigo-500' : 'text-slate-400'}`}
-                    >
-                        Resultados
-                    </button>
-                </div>
-                {activeTab === 'voting' && (
-                    <button
-                        onClick={() => setIsCreating(true)}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md text-sm"
-                    >
-                        + Nueva Pregunta
-                    </button>
-                )}
+                <h2 className="text-lg font-semibold text-white">Votaciones</h2>
+                <button
+                    onClick={() => setIsCreating(true)}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-md text-sm transition-colors shadow-lg shadow-indigo-900/20"
+                >
+                    + Nueva Pregunta
+                </button>
             </div>
 
-            <div className="p-4 grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 overflow-y-auto">
-                {activeTab === 'voting' ? (
-                    questions.filter(q => q.status !== 'CLOSED').map(q => (
-                        <div key={q.id} className="bg-slate-900 border border-white/10 rounded-lg p-4 flex flex-col justify-between">
-                            <div>
-                                <div className="flex justify-between items-start mb-2">
-                                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${q.status === 'OPEN' ? 'bg-green-900 text-green-300' :
-                                            'bg-slate-700 text-slate-300'
-                                        }`}>
-                                        {q.status}
-                                    </span>
-                                </div>
-                                <h4 className="text-white font-medium mb-4">{q.title}</h4>
-                            </div>
+            <div className="p-6 grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 overflow-y-auto">
+                {questions.map(q => (
+                    <QuestionCard
+                        key={q.id}
+                        question={q}
+                        tenantId={tenantId}
+                        assemblyId={assemblyId}
+                        onStatusChange={handleStatusChange}
+                    />
+                ))}
 
-                            <div className="flex gap-2 mt-2">
-                                {q.status === 'DRAFT' && (
-                                    <button
-                                        onClick={() => handleStatusChange(q.id, 'OPEN')}
-                                        className="flex-1 bg-green-600 hover:bg-green-700 text-white py-1.5 rounded text-sm"
-                                    >
-                                        Publicar
-                                    </button>
-                                )}
-                                {q.status === 'OPEN' && (
-                                    <button
-                                        onClick={() => handleStatusChange(q.id, 'CLOSED')}
-                                        className="flex-1 bg-red-600 hover:bg-red-700 text-white py-1.5 rounded text-sm"
-                                    >
-                                        Cerrar
-                                    </button>
-                                )}
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    questions.filter(q => q.status === 'CLOSED').map(q => {
-                        const res = results[q.id];
-                        return (
-                            <div key={q.id} className="bg-slate-900 border border-white/10 rounded-lg p-4">
-                                <h4 className="text-white font-medium mb-4">{q.title}</h4>
-                                {res ? (
-                                    <div className="space-y-3">
-                                        {res.results.map((opt: any) => (
-                                            <div key={opt.id}>
-                                                <div className="flex justify-between text-xs text-slate-400 mb-1">
-                                                    <span>{opt.text}</span>
-                                                    <span>{opt.count} votos ({opt.coefficientSum.toFixed(4)})</span>
-                                                </div>
-                                                <div className="w-full bg-slate-800 rounded-full h-2">
-                                                    <div
-                                                        className="bg-indigo-500 h-2 rounded-full"
-                                                        style={{ width: `${res.totalCoefficient > 0 ? (opt.coefficientSum / res.totalCoefficient) * 100 : 0}%` }}
-                                                    ></div>
-                                                </div>
-                                            </div>
-                                        ))}
-                                        <div className="pt-2 border-t border-white/5 text-xs text-slate-500 flex justify-between">
-                                            <span>Total Votos: {res.totalVotes}</span>
-                                            <span>Total Coef: {res.totalCoefficient.toFixed(4)}</span>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="text-slate-500 text-sm">Cargando resultados...</div>
-                                )}
-                            </div>
-                        );
-                    })
+                {questions.length === 0 && (
+                    <div className="col-span-full flex flex-col items-center justify-center h-64 text-slate-500 border-2 border-dashed border-slate-800 rounded-xl">
+                        <p>No hay preguntas creadas aún.</p>
+                        <button
+                            onClick={() => setIsCreating(true)}
+                            className="mt-2 text-indigo-400 hover:text-indigo-300 text-sm"
+                        >
+                            Crear la primera pregunta
+                        </button>
+                    </div>
                 )}
             </div>
 
@@ -196,15 +122,16 @@ export function VotingPanel({ tenantId, assemblyId }: { tenantId: string; assemb
                             type="text"
                             value={newQuestionTitle}
                             onChange={(e) => setNewQuestionTitle(e.target.value)}
-                            className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm px-3 py-2"
+                            className="mt-1 block w-full rounded-md border-white/10 bg-slate-800 text-white shadow-sm px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500"
                             required
+                            placeholder="Ej: Aprobación de Estados Financieros"
                         />
                     </div>
-                    <div className="text-xs text-slate-500">
+                    <div className="text-xs text-slate-500 bg-slate-800/50 p-2 rounded">
                         * Por defecto se crearán las opciones: Sí, No, Abstención.
                     </div>
                     <div className="flex justify-end pt-4">
-                        <button type="submit" className="bg-indigo-600 text-white px-4 py-2 rounded-md text-sm">
+                        <button type="submit" className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-md text-sm transition-colors">
                             Crear Borrador
                         </button>
                     </div>

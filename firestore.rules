@@ -15,7 +15,11 @@ service cloud.firestore {
     }
 
     match /tCollections/{tenantId}/{document=**} {
-      allow read, write: if true; // Debugging: Allow all access
+      allow read, write: if true;
+    }
+    
+    match /tCollections/{tenantId}/assemblies/{assemblyId}/questions/{questionId}/votes/{voteId} {
+      allow read, write: if true;
     }
   }
 }

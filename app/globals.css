@@ -19,3 +19,18 @@ body {
   border: 1px solid rgba(255,255,255,0.08);
   box-shadow: 0 20px 60px rgba(2,6,23,0.45);
 }
+
+@layer utilities {
+  .perspective-1000 {
+    perspective: 1000px;
+  }
+  .preserve-3d {
+    transform-style: preserve-3d;
+  }
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+  .rotate-y-180 {
+    transform: rotateY(180deg);
+  }
+}
