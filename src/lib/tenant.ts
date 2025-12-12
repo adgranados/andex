@@ -33,7 +33,7 @@ export async function resolveTenantByHost(host: string): Promise<{ tenantId?: st
   const q = await db.collection('tenants').where('subdomains', 'array-contains', sub).limit(1).get();
   if (!q.empty) {
     const doc = q.docs[0];
-    return { tenantId: doc.id, tenant: { id: doc.id, ...(doc.data() as Tenant) } };
+    return { tenantId: doc.id, tenant: { id: doc.id, ...(doc.data() as Omit<Tenant, 'id'>) } };
   }
   return {};
 }
@@ -43,7 +43,7 @@ export async function resolveTenantByEmail(email: string): Promise<{ tenantId?: 
   console.log(q.docs)
   if (!q.empty) {
     const doc = q.docs[0];
-    return { tenantId: doc.id, tenant: { id: doc.id, ...(doc.data() as Tenant) } };
+    return { tenantId: doc.id, tenant: { id: doc.id, ...(doc.data() as Omit<Tenant, 'id'>) } };
   }
   return {};
 }
@@ -52,7 +52,7 @@ export async function getTenantById(id?: string): Promise<Tenant | undefined> {
   if (!id || !db?.collection) return undefined;
   const doc = await db.collection('tenants').doc(id).get();
   if (!doc.exists) return undefined;
-  return { id: doc.id, ...(doc.data() as Tenant) };
+  return { id: doc.id, ...(doc.data() as Omit<Tenant, 'id'>) };
 }
 
 export function tenantBrandingStyles(tenant?: Tenant): CSSProperties {
