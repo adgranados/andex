@@ -7,7 +7,11 @@ export async function middleware(req: NextRequest) {
 
   if (host) {
     try {
-      const lookupUrl = new URL('/api/tenants/resolve', req.nextUrl.origin);
+      // Use 127.0.0.1 and fixed port 3000 (or PORT env) to fetch from the local API
+      // This avoids issues with SSL termination proxies or docker port mappings
+      // where req.nextUrl.origin might differ from the actual listening address.
+      const port = process.env.PORT || '3000';
+      const lookupUrl = new URL(`http://127.0.0.1:${port}/api/tenants/resolve`);
       lookupUrl.searchParams.set('host', host);
       const response = await fetch(lookupUrl, {
         headers: {
