@@ -17,7 +17,7 @@ async function ensureClaims(user: User) {
     email: user.email,
     cookieTenantId
   };
-  const response = await fetch('/api/auth/ensure-claims', {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/auth/ensure-claims`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -35,7 +35,7 @@ async function ensureClaims(user: User) {
     }
 
     if (data?.code === 'NO_TENANT_ASSIGNED') {
-      window.location.href = '/onboarding';
+      window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/onboarding`;
       return;
     }
 
@@ -53,7 +53,7 @@ async function ensureClaims(user: User) {
   if (!destinationTenant) {
     throw new Error('Tenant no resuelto');
   }
-  window.location.href = `/t/${destinationTenant}/dashboard`;
+  window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/t/${destinationTenant}/dashboard`;
 }
 
 export function LoginCard({ tenantName, tenantLogo }: { tenantName?: string; tenantLogo?: string }) {

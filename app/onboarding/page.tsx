@@ -17,7 +17,8 @@ export default function OnboardingPage() {
                 setUser(currentUser);
             } else {
                 // Redirect to login if not authenticated
-                window.location.href = '/login';
+                window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/login`;
+                return;
             }
         });
         return () => unsubscribe();
@@ -39,7 +40,7 @@ export default function OnboardingPage() {
         setError(null);
 
         try {
-            const response = await fetch('/api/tenants/create', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/tenants/create`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

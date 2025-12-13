@@ -14,11 +14,13 @@
   "dependencies": {
     "firebase": "^10.11.1",
     "firebase-admin": "^12.1.0",
+    "joi": "^18.0.2",
     "next": "14.2.3",
     "react": "18.2.0",
     "react-dom": "18.2.0"
   },
   "devDependencies": {
+    "@types/joi": "^17.2.2",
     "@types/node": "20.12.7",
     "@types/react": "18.2.22",
     "@types/react-dom": "18.2.7",

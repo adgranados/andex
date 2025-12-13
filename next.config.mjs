@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
-  basePath: "/ph",
+  basePath: process.env.NEXT_PUBLIC_BASE_PATH,
   webpack: (config) => {
     config.experiments ??= {};
     config.experiments.asyncWebAssembly = true;
