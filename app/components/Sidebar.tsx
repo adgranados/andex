@@ -22,7 +22,7 @@ export function Sidebar({ tenantId, tenantName }: SidebarProps) {
 
     const handleLogout = async () => {
         await signOut(auth);
-tvcsx        window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/login`;
+        window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/login`;
     };
 
     return (
