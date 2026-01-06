@@ -23,7 +23,7 @@ export default function JoinAssemblyPage({ params }: { params: { tenantId: strin
 
             setLoadingProperties(true);
             try {
-                const res = await fetch(`/api/t/${params.tenantId}/assemblies/properties?code=${code}`);
+                const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${params.tenantId}/assemblies/properties?code=${code}`);
                 if (res.ok) {
                     const data = await res.json();
                     setProperties(data);
@@ -48,7 +48,7 @@ export default function JoinAssemblyPage({ params }: { params: { tenantId: strin
         setError('');
 
         try {
-            const res = await fetch(`/api/t/${params.tenantId}/assemblies/join`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${params.tenantId}/assemblies/join`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ code, propertyIdentifier }),

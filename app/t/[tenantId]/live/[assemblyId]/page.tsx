@@ -41,7 +41,7 @@ export default function LiveAssemblyPage({ params }: { params: { tenantId: strin
         if (!session) return;
 
         const eventSource = new EventSource(
-            `/api/t/${params.tenantId}/assemblies/${params.assemblyId}/live-stream`
+            `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${params.tenantId}/assemblies/${params.assemblyId}/live-stream`
         );
 
         eventSource.onmessage = (event) => {
@@ -91,7 +91,7 @@ export default function LiveAssemblyPage({ params }: { params: { tenantId: strin
             // This eliminates 1 fetch of all properties per vote (huge savings!)
             const myCoef = session.coefficient || 0;
 
-            const res = await fetch(`/api/t/${params.tenantId}/assemblies/${params.assemblyId}/vote`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${params.tenantId}/assemblies/${params.assemblyId}/vote`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

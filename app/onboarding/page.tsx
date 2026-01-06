@@ -61,7 +61,7 @@ export default function OnboardingPage() {
             await user.getIdToken(true);
 
             // Redirect to new tenant dashboard
-            window.location.href = `/t/${data.tenantId}/dashboard`;
+            window.location.href = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/t/${data.tenantId}/dashboard`;
 
         } catch (err) {
             console.error('Onboarding error:', err);
