@@ -45,36 +45,37 @@ export function AttendancePanel({ tenantId, assemblyId }: { tenantId: string; as
         // Initial fetch
         fetchData();
 
-        // ✅ Server-Sent Events for real-time updates (replaces polling)
-        // This reduces Firestore reads by 95% compared to 3-second polling
-        const eventSource = new EventSource(
-            `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/assemblies/${assemblyId}/attendance/stream`
-        );
+        let eventSource: EventSource | null = null; // Declare eventSource here
 
-        eventSource.onmessage = (event) => {
-            try {
-                const data: AttendanceRecord[] = JSON.parse(event.data);
-                const attMap: Record<string, string> = {};
-                data.forEach(r => attMap[r.propertyId] = r.status);
-                setAttendance(attMap);
-                setLoading(false);
-            } catch (err) {
-                console.error('SSE parsing error:', err);
-            }
+        const connectToSseStream = () => {
+            eventSource = new EventSource(
+                `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/assemblies/${assemblyId}/attendance/stream`
+            );
+
+            eventSource.onmessage = (event) => {
+                try {
+                    const data: AttendanceRecord[] = JSON.parse(event.data);
+                    const attMap: Record<string, string> = {};
+                    data.forEach(r => attMap[r.propertyId] = r.status);
+                    setAttendance(attMap);
+                    setLoading(false);
+                } catch (err) {
+                    console.error('SSE parsing error:', err);
+                }
+            };
+
+            eventSource.onerror = (error) => {
+                console.error('SSE connection error. Retrying in 5s...', error);
+                eventSource?.close(); // Close current connection if it exists
+                setTimeout(connectToSseStream, 5000); // Attempt to reconnect
+            };
         };
 
-        eventSource.onerror = (error) => {
-            console.error('SSE connection error:', error);
-            eventSource.close();
-            // Fallback: retry connection after 5 seconds
-            setTimeout(() => {
-                console.log('Retrying SSE connection...');
-                window.location.reload();
-            }, 5000);
-        };
+        // Initial connection
+        connectToSseStream();
 
         return () => {
-            eventSource.close();
+            eventSource?.close(); // Close on unmount
         };
     }, [tenantId, assemblyId]);
 
