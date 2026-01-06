@@ -24,7 +24,7 @@ export function ZoneForm({ tenantId, onSuccess, onCancel, initialData }: ZoneFor
             const method = initialData ? 'PUT' : 'POST';
             const body = initialData ? { id: initialData.id, name, description } : { name, description };
 
-            const res = await fetch(`/api/t/${tenantId}/zones`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/zones`, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
@@ -92,7 +92,7 @@ export function TypeForm({ tenantId, onSuccess, onCancel, initialData }: TypeFor
             const method = initialData ? 'PUT' : 'POST';
             const body = initialData ? { id: initialData.id, name, description } : { name, description };
 
-            const res = await fetch(`/api/t/${tenantId}/property-types`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/property-types`, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),
@@ -157,7 +157,7 @@ export function OwnerForm({ tenantId, onSuccess, onCancel, initialData }: OwnerF
                 ? { id: initialData.id, name, identificationNumber, email, phone }
                 : { name, identificationNumber, email, phone };
 
-            const res = await fetch(`/api/t/${tenantId}/owners`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/owners`, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),

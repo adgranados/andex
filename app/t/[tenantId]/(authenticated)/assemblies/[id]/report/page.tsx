@@ -9,7 +9,7 @@ export default function AssemblyReportPage({ params }: { params: { tenantId: str
     useEffect(() => {
         const fetchReport = async () => {
             try {
-                const res = await fetch(`/api/t/${params.tenantId}/assemblies/${params.id}/report`);
+                const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${params.tenantId}/assemblies/${params.id}/report`);
                 if (res.ok) {
                     setData(await res.json());
                 }

@@ -23,7 +23,7 @@ export function SettingsForm({ tenantId, initialName, initialSlug }: SettingsFor
         setSuccess(false);
 
         try {
-            const response = await fetch(`/api/t/${tenantId}/settings`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/settings`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ name }),

@@ -25,7 +25,7 @@ export function OwnerList({ tenantId }: { tenantId: string }) {
 
     const fetchOwners = () => {
         setLoading(true);
-        fetch(`/api/t/${tenantId}/owners`)
+        fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/owners`)
             .then((res) => res.json())
             .then((data) => {
                 setOwners(data);

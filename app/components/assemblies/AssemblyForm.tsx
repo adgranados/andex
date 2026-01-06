@@ -22,7 +22,7 @@ export function AssemblyForm({ tenantId, onSuccess, onCancel }: AssemblyFormProp
         setLoading(true);
 
         try {
-            const res = await fetch(`/api/t/${tenantId}/assemblies`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/assemblies`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

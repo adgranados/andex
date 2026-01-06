@@ -29,7 +29,7 @@ export function AttendancePanel({ tenantId, assemblyId }: { tenantId: string; as
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const propsRes = await fetch(`/api/t/${tenantId}/properties`);
+                const propsRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/properties`);
                 if (propsRes.ok) {
                     setProperties(await propsRes.json());
                 }
@@ -48,7 +48,7 @@ export function AttendancePanel({ tenantId, assemblyId }: { tenantId: string; as
         // ✅ Server-Sent Events for real-time updates (replaces polling)
         // This reduces Firestore reads by 95% compared to 3-second polling
         const eventSource = new EventSource(
-            `/api/t/${tenantId}/assemblies/${assemblyId}/attendance/stream`
+            `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/assemblies/${assemblyId}/attendance/stream`
         );
 
         eventSource.onmessage = (event) => {
@@ -100,7 +100,7 @@ export function AttendancePanel({ tenantId, assemblyId }: { tenantId: string; as
             // But wait, the previous code said "If isPresent return".
             // Let's allow re-posting for now, assuming the API upserts.
 
-            const res = await fetch(`/api/t/${tenantId}/assemblies/${assemblyId}/attendance`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/assemblies/${assemblyId}/attendance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -156,7 +156,7 @@ export function AttendancePanel({ tenantId, assemblyId }: { tenantId: string; as
         }
 
         try {
-            const res = await fetch(`/api/t/${tenantId}/assemblies/${assemblyId}/attendance`);
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/assemblies/${assemblyId}/attendance`);
             if (res.ok) {
                 const data: AttendanceRecord[] = await res.json();
                 console.log('API Attendance Data:', data);

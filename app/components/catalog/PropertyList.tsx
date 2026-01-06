@@ -25,7 +25,7 @@ export function PropertyList({ tenantId }: { tenantId: string }) {
 
     const fetchProperties = () => {
         setLoading(true);
-        fetch(`/api/t/${tenantId}/properties`)
+        fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/properties`)
             .then((res) => res.json())
             .then((data) => {
                 setProperties(data);

@@ -24,7 +24,7 @@ export function VotingPanel({ tenantId, assemblyId }: { tenantId: string; assemb
     ];
 
     const fetchQuestions = async () => {
-        const res = await fetch(`/api/t/${tenantId}/assemblies/${assemblyId}/questions`);
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/assemblies/${assemblyId}/questions`);
         if (res.ok) {
             const data = await res.json();
             // Sort by createdAt desc (newest first)
@@ -41,7 +41,7 @@ export function VotingPanel({ tenantId, assemblyId }: { tenantId: string; assemb
     const handleCreateQuestion = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const res = await fetch(`/api/t/${tenantId}/assemblies/${assemblyId}/questions`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/assemblies/${assemblyId}/questions`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -64,7 +64,7 @@ export function VotingPanel({ tenantId, assemblyId }: { tenantId: string; assemb
 
     const handleStatusChange = async (questionId: string, newStatus: string) => {
         try {
-            const res = await fetch(`/api/t/${tenantId}/assemblies/${assemblyId}/questions/${questionId}`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/assemblies/${assemblyId}/questions/${questionId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })

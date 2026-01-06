@@ -46,9 +46,9 @@ export function PropertyForm({ tenantId, onSuccess, onCancel, initialData }: Pro
         const fetchData = async () => {
             try {
                 const [zonesRes, typesRes, ownersRes] = await Promise.all([
-                    fetch(`/api/t/${tenantId}/zones`),
-                    fetch(`/api/t/${tenantId}/property-types`),
-                    fetch(`/api/t/${tenantId}/owners`)
+                    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/zones`),
+                    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/property-types`),
+                    fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/owners`)
                 ]);
 
                 if (zonesRes.ok) setZones(await zonesRes.json());
@@ -72,7 +72,7 @@ export function PropertyForm({ tenantId, onSuccess, onCancel, initialData }: Pro
                 ? { id: initialData.id, name, zoneId, typeId, ownerId, address, coefficient: parseFloat(coefficient) || 0 }
                 : { name, zoneId, typeId, ownerId, address, coefficient: parseFloat(coefficient) || 0 };
 
-            const res = await fetch(`/api/t/${tenantId}/properties`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/properties`, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(body),

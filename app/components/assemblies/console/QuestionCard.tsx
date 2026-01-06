@@ -39,7 +39,7 @@ export function QuestionCard({ question, tenantId, assemblyId, onStatusChange }:
 
     // Listen for real-time results
     useEffect(() => {
-        const streamUrl = `/api/t/${tenantId}/assemblies/${assemblyId}/questions/${question.id}/votes/stream`;
+        const streamUrl = `${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/assemblies/${assemblyId}/questions/${question.id}/votes/stream`;
         console.log("Connecting to vote stream:", streamUrl);
 
         const eventSource = new EventSource(streamUrl);

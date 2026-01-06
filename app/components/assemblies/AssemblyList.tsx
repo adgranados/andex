@@ -24,7 +24,7 @@ export function AssemblyList({ tenantId }: { tenantId: string }) {
 
     const fetchAssemblies = () => {
         setLoading(true);
-        fetch(`/api/t/${tenantId}/assemblies`)
+        fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/assemblies`)
             .then((res) => res.json())
             .then((data) => {
                 setAssemblies(data);

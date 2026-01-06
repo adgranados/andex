@@ -21,7 +21,7 @@ export function AssemblyConsoleLayout({ tenantId, assemblyId, assemblyTitle, ass
         if (!confirm('¿Estás seguro de que deseas iniciar la asamblea? Los asistentes podrán unirse.')) return;
 
         try {
-            const res = await fetch(`/api/t/${tenantId}/assemblies/${assemblyId}/start`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/assemblies/${assemblyId}/start`, {
                 method: 'POST'
             });
 
@@ -37,7 +37,7 @@ export function AssemblyConsoleLayout({ tenantId, assemblyId, assemblyTitle, ass
         if (!confirm('¿Estás seguro de que deseas finalizar la asamblea? Esta acción no se puede deshacer.')) return;
 
         try {
-            const res = await fetch(`/api/t/${tenantId}/assemblies/${assemblyId}/close`, {
+            const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/assemblies/${assemblyId}/close`, {
                 method: 'POST'
             });
 
@@ -51,7 +51,7 @@ export function AssemblyConsoleLayout({ tenantId, assemblyId, assemblyTitle, ass
     };
 
     const handleCopyLink = () => {
-        const url = `${window.location.origin}/t/${tenantId}/join`;
+        const url = `${window.location.origin}${process.env.NEXT_PUBLIC_BASE_PATH || ''}/t/${tenantId}/join`;
         const text = `Únete a la asamblea aquí: ${url}\nCódigo: ${assemblyCode}`;
         navigator.clipboard.writeText(text);
         alert('Link copiado al portapapeles');

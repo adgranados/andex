@@ -18,7 +18,7 @@ export function TypeList({ tenantId }: { tenantId: string }) {
 
     const fetchTypes = () => {
         setLoading(true);
-        fetch(`/api/t/${tenantId}/property-types`)
+        fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/property-types`)
             .then((res) => res.json())
             .then((data) => {
                 setTypes(data);

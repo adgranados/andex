@@ -18,7 +18,7 @@ export function ZoneList({ tenantId }: { tenantId: string }) {
 
     const fetchZones = () => {
         setLoading(true);
-        fetch(`/api/t/${tenantId}/zones`)
+        fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/zones`)
             .then((res) => res.json())
             .then((data) => {
                 setZones(data);
