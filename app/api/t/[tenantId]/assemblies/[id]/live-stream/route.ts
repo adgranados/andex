@@ -14,74 +14,37 @@ export async function GET(
 
     const stream = new ReadableStream({
         async start(controller) {
-            // Send initial data
-            try {
-                // Get assembly status
-                const assemblyDoc = await db
-                    .collection(`tCollections/${tenantId}/assemblies`)
-                    .doc(assemblyId)
-                    .get();
+            // Send initial connection confirmation (optional but good for debugging)
+            // controller.enqueue(encoder.encode('event: connected\ndata: "connected"\n\n'));
 
-                const assemblyData = assemblyDoc.data();
+            let assemblyData: any = { status: 'DRAFT' };
+            let questionsData: any[] = [];
 
-                // Get questions
-                const questionsSnapshot = await db
-                    .collection(`tCollections/${tenantId}/assemblies/${assemblyId}/questions`)
-                    .get();
-
-                const questions = questionsSnapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                }));
-
-                const initialData = {
+            const sendUpdate = () => {
+                const data = {
                     status: assemblyData?.status || 'DRAFT',
-                    questions
+                    questions: questionsData
                 };
-
-                controller.enqueue(
-                    encoder.encode(`data: ${JSON.stringify(initialData)}\n\n`)
-                );
-            } catch (error) {
-                console.error('Error fetching initial assembly data:', error);
-            }
+                try {
+                    controller.enqueue(
+                        encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
+                    );
+                } catch (error) {
+                    // Controller might be closed
+                }
+            };
 
             // Set up real-time listener for assembly status
             const unsubscribeAssembly = db
                 .collection(`tCollections/${tenantId}/assemblies`)
                 .doc(assemblyId)
                 .onSnapshot(
-                    async (doc) => {
-                        try {
-                            const assemblyData = doc.data();
-
-                            // Also get questions
-                            const questionsSnapshot = await db
-                                .collection(`tCollections/${tenantId}/assemblies/${assemblyId}/questions`)
-                                .get();
-
-                            const questions = questionsSnapshot.docs.map(qDoc => ({
-                                id: qDoc.id,
-                                ...qDoc.data()
-                            }));
-
-                            const data = {
-                                status: assemblyData?.status || 'DRAFT',
-                                questions
-                            };
-
-                            controller.enqueue(
-                                encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
-                            );
-                        } catch (error) {
-                            console.error('Error in assembly snapshot:', error);
-                        }
+                    (doc) => {
+                        assemblyData = doc.data() || { status: 'DRAFT' };
+                        sendUpdate();
                     },
                     (error) => {
                         console.error('Firestore snapshot error:', error);
-                        controller.enqueue(
-                            encoder.encode(`event: error\ndata: ${JSON.stringify({ error: error.message })}\n\n`)
-                        );
                     }
                 );
 
@@ -89,30 +52,12 @@ export async function GET(
             const unsubscribeQuestions = db
                 .collection(`tCollections/${tenantId}/assemblies/${assemblyId}/questions`)
                 .onSnapshot(
-                    async (snapshot) => {
-                        try {
-                            const questions = snapshot.docs.map(doc => ({
-                                id: doc.id,
-                                ...doc.data()
-                            }));
-
-                            // Get current assembly status
-                            const assemblyDoc = await db
-                                .collection(`tCollections/${tenantId}/assemblies`)
-                                .doc(assemblyId)
-                                .get();
-
-                            const data = {
-                                status: assemblyDoc.data()?.status || 'DRAFT',
-                                questions
-                            };
-
-                            controller.enqueue(
-                                encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
-                            );
-                        } catch (error) {
-                            console.error('Error in questions snapshot:', error);
-                        }
+                    (snapshot) => {
+                        questionsData = snapshot.docs.map(doc => ({
+                            id: doc.id,
+                            ...doc.data()
+                        }));
+                        sendUpdate();
                     },
                     (error) => {
                         console.error('Firestore questions snapshot error:', error);

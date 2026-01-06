@@ -14,24 +14,6 @@ export async function GET(
 
     const stream = new ReadableStream({
         async start(controller) {
-            // Send initial data
-            try {
-                const snapshot = await db
-                    .collection(`tCollections/${tenantId}/assemblies/${assemblyId}/attendance`)
-                    .get();
-
-                const data = snapshot.docs.map(doc => ({
-                    propertyId: doc.id,
-                    ...doc.data()
-                }));
-
-                controller.enqueue(
-                    encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
-                );
-            } catch (error) {
-                console.error('Error fetching initial attendance:', error);
-            }
-
             // Set up real-time listener
             const unsubscribe = db
                 .collection(`tCollections/${tenantId}/assemblies/${assemblyId}/attendance`)
