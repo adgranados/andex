@@ -39,9 +39,13 @@ export async function GET(request: Request, { params }: { params: { tenantId: st
                 };
             });
 
+            const isVoided = qData.status === 'VOIDED';
+
             return {
                 id: doc.id,
                 ...qData,
+                title: isVoided ? `[ANULADA] ${qData.title}` : qData.title,
+                isVoided,
                 totalVotes: votes.length,
                 totalCoefficient: votes.reduce((sum, v) => sum + (v.coefficient || 0), 0),
                 results

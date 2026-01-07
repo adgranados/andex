@@ -89,7 +89,14 @@ export default function AssemblyReportPage({ params }: { params: { tenantId: str
                     <h2 className="text-xl font-bold border-b border-gray-300 pb-2 mb-4">Resultados de Votaciones</h2>
                     <div className="space-y-8">
                         {questions.map((q: any, idx: number) => (
-                            <div key={q.id} className="break-inside-avoid">
+                            <div key={q.id} className={`break-inside-avoid ${q.isVoided ? 'opacity-50 grayscale relative' : ''}`}>
+                                {q.isVoided && (
+                                    <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+                                        <span className="text-4xl font-bold text-red-500/20 -rotate-12 border-4 border-red-500/20 px-4 py-2 uppercase">
+                                            Anulada
+                                        </span>
+                                    </div>
+                                )}
                                 <div className="flex items-center gap-3 mb-3">
                                     <span className="bg-black text-white w-6 h-6 flex items-center justify-center rounded-full text-sm font-bold">
                                         {idx + 1}
