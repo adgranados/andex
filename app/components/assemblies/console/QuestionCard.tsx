@@ -112,10 +112,12 @@ export function QuestionCard({ question, tenantId, assemblyId, properties, onSta
                             <div className="flex justify-between items-start mb-4">
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${question.status === 'OPEN' ? 'bg-green-900/50 text-green-400 border border-green-500/30 animate-pulse' :
                                     question.status === 'CLOSED' ? 'bg-red-900/20 text-red-400 border border-red-500/30' :
-                                        'bg-slate-700 text-slate-300'
+                                        question.status === 'VOIDED' ? 'bg-slate-700 text-slate-400 border border-slate-600' :
+                                            'bg-slate-700 text-slate-300'
                                     }`}>
                                     {question.status === 'DRAFT' ? 'BORRADOR' :
-                                        question.status === 'OPEN' ? 'EN VIVO' : 'CERRADA'}
+                                        question.status === 'OPEN' ? 'EN VIVO' :
+                                            question.status === 'VOIDED' ? 'ANULADA' : 'CERRADA'}
                                 </span>
                                 <div className="text-slate-400 text-xs flex items-center gap-1">
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
@@ -136,7 +138,7 @@ export function QuestionCard({ question, tenantId, assemblyId, properties, onSta
                                 <span className="font-mono font-bold text-indigo-400 text-lg">{totalVotes}</span>
                             </div>
 
-                            {question.status !== 'CLOSED' && (
+                            {question.status !== 'CLOSED' && question.status !== 'VOIDED' && (
                                 <button
                                     onClick={handleStatusToggle}
                                     className={`w-full py-3 rounded-lg font-medium text-sm transition-all transform hover:scale-[1.02] active:scale-[0.98] ${question.status === 'DRAFT'
@@ -148,8 +150,29 @@ export function QuestionCard({ question, tenantId, assemblyId, properties, onSta
                                 </button>
                             )}
                             {question.status === 'CLOSED' && (
-                                <div className="w-full py-3 text-center text-slate-500 text-sm font-medium bg-slate-800 rounded-lg border border-slate-700">
-                                    Votación Finalizada
+                                <div className="space-y-2">
+                                    <div className="w-full py-3 text-center text-slate-500 text-sm font-medium bg-slate-800 rounded-lg border border-slate-700">
+                                        Votación Finalizada
+                                    </div>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm('¿Estás seguro de que quieres ANULAR esta pregunta? Esta acción es irreversible y no se considerarán los votos.')) {
+                                                onStatusChange(question.id, 'VOIDED');
+                                            }
+                                        }}
+                                        className="w-full py-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-lg text-xs font-medium border border-transparent hover:border-red-900/30 transition-all"
+                                    >
+                                        Anular Pregunta
+                                    </button>
+                                </div>
+                            )}
+                            {question.status === 'VOIDED' && (
+                                <div className="w-full py-3 text-center text-slate-500 text-sm font-medium bg-slate-800 rounded-lg border border-slate-700 flex items-center justify-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
+                                    </svg>
+                                    Pregunta Anulada
                                 </div>
                             )}
                         </div>

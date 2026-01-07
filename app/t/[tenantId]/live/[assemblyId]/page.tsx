@@ -55,6 +55,10 @@ export default function LiveAssemblyPage({ params }: { params: { tenantId: strin
                 const questions: Question[] = data.questions || [];
                 const open = questions.find(q => q.status === 'OPEN');
 
+                // If no open question, check if the last active one was just voided.
+                // However, our logic below clears activeQuestion if null.
+                // If a question is VOIDED it is no longer OPEN, so it falls through.
+
                 if (open) {
                     if (activeQuestion?.id !== open.id) {
                         setActiveQuestion(open);

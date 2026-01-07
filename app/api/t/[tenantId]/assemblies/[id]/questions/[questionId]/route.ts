@@ -17,6 +17,8 @@ export async function PUT(request: Request, { params }: { params: { tenantId: st
         // For now, we just update the status.
         if (status === 'CLOSED') {
             updateData.closedAt = new Date().toISOString();
+        } else if (status === 'VOIDED') {
+            updateData.voidedAt = new Date().toISOString();
         }
 
         await db.collection(`tCollections/${tenantId}/assemblies/${assemblyId}/questions`).doc(questionId).update(updateData);
