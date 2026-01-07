@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagrama Detallado de Arquitectura Andex</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #graph {
+            width: 100vw;
+            height: 100vh;
+            background-color: #ffffff;
+        }
+
+        .node circle {
+            stroke: #fff;
+            stroke-width: 2px;
+            transition: all 0.3s;
+        }
+
+        .node text {
+            pointer-events: none;
+            font-size: 10px;
+            font-family: sans-serif;
+            text-shadow: 0 1px 0 #fff, 1px 0 0 #fff, 0 -1px 0 #fff, -1px 0 0 #fff;
+        }
+
+        .link {
+            stroke: #999;
+            stroke-opacity: 0.4;
+            fill: none;
+        }
+
+        .group-hull {
+            fill-opacity: 0.1;
+            stroke-width: 30;
+            stroke-linejoin: round;
+        }
+
+        .tooltip {
+            position: absolute;
+            padding: 10px;
+            font-size: 12px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            border-radius: 5px;
+            pointer-events: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            opacity: 0;
+            z-index: 10;
+        }
+
+        .legend-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            pointer-events: none;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="legend-container">
+        <h3 style="margin: 0 0 10px 0; font-size: 16px;">Leyenda</h3>
+        <div id="legend"></div>
+    </div>
+    <div id="graph"></div>
+    <div class="tooltip"></div>
+
+    <script>
+        const nodes = [
+            // --- FRONTEND (Blue) ---
+            // Pages/Layouts
+            { id: "Layout", group: "frontend_core", label: "Root Layout", type: "layout" },
+            { id: "AuthGuard", group: "frontend_core", label: "AuthGuard", type: "HOC" },
+            { id: "Sidebar", group: "frontend_ui", label: "Sidebar", type: "component" },
+
+            // Console / Assembly Features
+            { id: "AssemblyConsole", group: "frontend_page", label: "Assembly Console", type: "page" },
+            { id: "VotingPanel", group: "frontend_assembly", label: "VotingPanel", type: "component" },
+            { id: "QuestionCard", group: "frontend_assembly", label: "QuestionCard", type: "component" },
+            { id: "AttendancePanel", group: "frontend_assembly", label: "AttendancePanel", type: "component" },
+            { id: "AssemblyForm", group: "frontend_assembly", label: "AssemblyForm", type: "component" },
+
+            // Catalog Features
+            { id: "CatalogPage", group: "frontend_page", label: "Catalog Page", type: "page" },
+            { id: "OwnerList", group: "frontend_catalog", label: "OwnerList", type: "component" },
+            { id: "PropertyList", group: "frontend_catalog", label: "PropertyList", type: "component" },
+            { id: "SettingsForm", group: "frontend_catalog", label: "SettingsForm", type: "component" },
+
+            // Services/Libs Client
+            { id: "FirebaseClient", group: "frontend_lib", label: "firebaseClient", type: "lib" },
+
+            // --- BACKEND (Orange) ---
+            // API Routes - Assemblies
+            { id: "Api_Assembly_Stream", group: "backend_api", label: "GET attendance/stream", type: "endpoint" },
+            { id: "Api_Stats_Stream", group: "backend_api", label: "GET votes/stream", type: "endpoint" },
+            { id: "Api_Vote", group: "backend_api", label: "POST vote", type: "endpoint" },
+            { id: "Api_CreateAssembly", group: "backend_api", label: "POST assemblies", type: "endpoint" },
+
+            // API Routes - Catalog
+            { id: "Api_Owners", group: "backend_api", label: "API Owners", type: "endpoint" },
+            { id: "Api_Properties", group: "backend_api", label: "API Properties", type: "endpoint" },
+            { id: "Api_Settings", group: "backend_api", label: "API Settings", type: "endpoint" },
+
+            // API Routes - Auth/Tenant
+            { id: "Api_EnsureClaims", group: "backend_api", label: "ensure-claims", type: "endpoint" },
+            { id: "Api_Tenants", group: "backend_api", label: "tenants/resolve", type: "endpoint" },
+
+            // Server Libs
+            { id: "FirebaseAdmin", group: "backend_lib", label: "firebaseAdmin", type: "lib" },
+            { id: "TenantLib", group: "backend_lib", label: "tenant.ts", type: "lib" },
+
+            // --- DATABASE / EXTERNAL (Green) ---
+            { id: "Firestore", group: "database", label: "Firestore DB", type: "service" },
+            { id: "FirebaseAuth", group: "database", label: "Firebase Auth", type: "service" }
+        ];
+
+        const links = [
+            // Front Structure
+            { source: "Layout", target: "AuthGuard" },
+            { source: "Layout", target: "Sidebar" },
+            { source: "AuthGuard", target: "AssemblyConsole" },
+            { source: "AuthGuard", target: "CatalogPage" },
+
+            // Console Components
+            { source: "AssemblyConsole", target: "VotingPanel" },
+            { source: "AssemblyConsole", target: "AttendancePanel" },
+            { source: "VotingPanel", target: "QuestionCard" },
+
+            // Catalog Components
+            { source: "CatalogPage", target: "OwnerList" },
+            { source: "CatalogPage", target: "PropertyList" },
+            { source: "CatalogPage", target: "SettingsForm" },
+
+            // Client -> API (Data Fetching)
+            { source: "AttendancePanel", target: "Api_Assembly_Stream", label: "SSE" },
+            { source: "QuestionCard", target: "Api_Stats_Stream", label: "SSE" },
+            { source: "QuestionCard", target: "Api_Vote", label: "POST" },
+            { source: "AssemblyForm", target: "Api_CreateAssembly", label: "POST" },
+            { source: "OwnerList", target: "Api_Owners", label: "fetch" },
+            { source: "PropertyList", target: "Api_Properties", label: "fetch" },
+            { source: "SettingsForm", target: "Api_Settings", label: "fetch" },
+
+            // Client -> Auth
+            { source: "AuthGuard", target: "FirebaseClient" },
+            { source: "FirebaseClient", target: "FirebaseAuth" },
+
+            // API -> Libs -> DB
+            { source: "Api_Vote", target: "FirebaseAdmin" },
+            { source: "Api_Assembly_Stream", target: "FirebaseAdmin" },
+            { source: "Api_Stats_Stream", target: "FirebaseAdmin" },
+            { source: "Api_Owners", target: "FirebaseAdmin" },
+            { source: "Api_Properties", target: "FirebaseAdmin" },
+            { source: "Api_Tenants", target: "TenantLib" },
+            { source: "TenantLib", target: "Firestore" },
+
+            // DB Interactions
+            { source: "FirebaseAdmin", target: "Firestore" },
+            { source: "Api_EnsureClaims", target: "FirebaseAuth" }
+        ];
+
+        // Group colors
+        const groupColors = {
+            "frontend_core": "#3498db",
+            "frontend_page": "#5dade2",
+            "frontend_ui": "#85c1e9",
+            "frontend_assembly": "#2980b9",
+            "frontend_catalog": "#2980b9",
+            "frontend_lib": "#1abc9c",
+            "backend_api": "#e67e22",
+            "backend_lib": "#d35400",
+            "database": "#27ae60"
+        };
+
+        const groupLabels = {
+            "frontend_core": "Frontend Core",
+            "frontend_page": "Pages",
+            "frontend_ui": "UI Components",
+            "frontend_assembly": "Assembly Module",
+            "frontend_catalog": "Catalog Module",
+            "frontend_lib": "Client Libs",
+            "backend_api": "API Routes",
+            "backend_lib": "Server Libs",
+            "database": "Infrastructure"
+        };
+
+        // Initialize D3
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+
+        const svg = d3.select("#graph").append("svg")
+            .attr("width", width)
+            .attr("height", height)
+            .call(d3.zoom().on("zoom", (event) => {
+                const { k, x, y } = event.transform;
+                g.attr("transform", `translate(${x},${y}) scale(${k})`);
+            }))
+            .on("dblclick.zoom", null);
+
+        const g = svg.append("g");
+
+        // Arrow marker
+        svg.append("defs").append("marker")
+            .attr("id", "arrow")
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 28) // Adjust for node radius
+            .attr("refY", 0)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5")
+            .attr("fill", "#999");
+
+        // Forces
+        const simulation = d3.forceSimulation(nodes)
+            .force("link", d3.forceLink(links).id(d => d.id).distance(100))
+            .force("charge", d3.forceManyBody().strength(-400))
+            .force("collide", d3.forceCollide(40))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("x", d3.forceX(width / 2).strength(0.05))
+            .force("y", d3.forceY(height / 2).strength(0.05));
+
+        // Links
+        const link = g.append("g")
+            .selectAll("line")
+            .data(links)
+            .enter().append("line")
+            .attr("class", "link")
+            .attr("marker-end", "url(#arrow)");
+
+        // Nodes
+        const node = g.append("g")
+            .selectAll(".node")
+            .data(nodes)
+            .enter().append("g")
+            .attr("class", "node")
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
+
+        node.append("circle")
+            .attr("r", 15)
+            .attr("fill", d => groupColors[d.group] || "#ccc");
+
+        node.append("text")
+            .attr("dx", 18)
+            .attr("dy", 4)
+            .text(d => d.label);
+
+        // Tooltip interaction
+        const tooltip = d3.select(".tooltip");
+        node.on("mouseover", (event, d) => {
+            tooltip.transition().duration(200).style("opacity", .9);
+            tooltip.html(`<strong>${d.label}</strong><br/>Type: ${d.type}<br/>Group: ${groupLabels[d.group]}`)
+                .style("left", (event.pageX + 10) + "px")
+                .style("top", (event.pageY - 28) + "px");
+
+            // Highlight connections
+            link.style("stroke", l => (l.source === d || l.target === d) ? "#555" : "#999")
+                .style("stroke-opacity", l => (l.source === d || l.target === d) ? 1 : 0.1)
+                .style("stroke-width", l => (l.source === d || l.target === d) ? 2 : 1);
+        })
+            .on("mouseout", () => {
+                tooltip.transition().duration(500).style("opacity", 0);
+                link.style("stroke", "#999")
+                    .style("stroke-opacity", 0.4)
+                    .style("stroke-width", 1);
+            });
+
+        // Simulation tick
+        simulation.on("tick", () => {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+
+            node
+                .attr("transform", d => `translate(${d.x},${d.y})`);
+        });
+
+        // Drag functions
+        function dragstarted(event, d) {
+            if (!event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(event, d) {
+            d.fx = event.x;
+            d.fy = event.y;
+        }
+
+        function dragended(event, d) {
+            if (!event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        // Build Legend
+        const legend = d3.select("#legend");
+        const uniqueGroups = [...new Set(nodes.map(d => d.group))];
+        uniqueGroups.forEach(group => {
+            const item = legend.append("div").attr("class", "legend-item");
+            item.append("div")
+                .attr("class", "legend-color")
+                .style("background-color", groupColors[group]);
+            item.append("span").text(groupLabels[group]);
+        });
+
+    </script>
+</body>
+
+</html>

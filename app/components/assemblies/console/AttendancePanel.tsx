@@ -18,33 +18,14 @@ interface AttendanceRecord {
     status: string;
 }
 
-export function AttendancePanel({ tenantId, assemblyId }: { tenantId: string; assemblyId: string }) {
-    const [properties, setProperties] = useState<Property[]>([]);
+export function AttendancePanel({ tenantId, assemblyId, properties }: { tenantId: string; assemblyId: string; properties: Property[] }) {
     const [attendance, setAttendance] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
 
-    // Fetch properties (static) and subscribe to attendance (real-time)
+    // Subscribe to attendance (real-time)
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const propsRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/properties`);
-                if (propsRes.ok) {
-                    setProperties(await propsRes.json());
-                }
-            } catch (error) {
-                console.error('Error fetching properties:', error);
-            } finally {
-                // Only set loading to false if we're not waiting for attendance (which is handled by onSnapshot)
-                // But we want to show the UI as soon as properties are loaded, even if attendance is still syncing.
-                setLoading(false); // Set loading to false after initial properties and attendance are fetched
-            }
-        };
-
-        // Initial fetch
-        fetchData();
-
         let eventSource: EventSource | null = null; // Declare eventSource here
 
         const connectToSseStream = () => {

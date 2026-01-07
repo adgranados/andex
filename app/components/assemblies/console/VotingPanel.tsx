@@ -4,6 +4,13 @@ import { useState, useEffect } from 'react';
 import { InlineModal } from '@/app/components/catalog/InlineModal';
 import { QuestionCard } from './QuestionCard';
 
+interface Property {
+    id: string;
+    name: string;
+    ownerName: string;
+    coefficient: number;
+}
+
 interface Question {
     id: string;
     title: string;
@@ -11,7 +18,7 @@ interface Question {
     options: any[];
 }
 
-export function VotingPanel({ tenantId, assemblyId }: { tenantId: string; assemblyId: string }) {
+export function VotingPanel({ tenantId, assemblyId, properties }: { tenantId: string; assemblyId: string; properties: Property[] }) {
     const [questions, setQuestions] = useState<Question[]>([]);
     const [isCreating, setIsCreating] = useState(false);
     const [newQuestionTitle, setNewQuestionTitle] = useState('');
@@ -145,6 +152,7 @@ export function VotingPanel({ tenantId, assemblyId }: { tenantId: string; assemb
                         question={q}
                         tenantId={tenantId}
                         assemblyId={assemblyId}
+                        properties={properties}
                         onStatusChange={handleStatusChange}
                     />
                 ))}

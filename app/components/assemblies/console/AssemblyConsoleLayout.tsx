@@ -3,7 +3,7 @@
 import { AttendancePanel } from './AttendancePanel';
 import { VotingPanel } from './VotingPanel';
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface AssemblyConsoleLayoutProps {
     tenantId: string;
@@ -13,9 +13,31 @@ interface AssemblyConsoleLayoutProps {
     initialStatus: string;
 }
 
+export interface Property {
+    id: string;
+    name: string;
+    ownerName: string;
+    coefficient: number;
+}
+
 export function AssemblyConsoleLayout({ tenantId, assemblyId, assemblyTitle, assemblyCode, initialStatus }: AssemblyConsoleLayoutProps) {
     const router = useRouter();
     const [status, setStatus] = useState(initialStatus);
+    const [properties, setProperties] = useState<Property[]>([]);
+
+    useEffect(() => {
+        const fetchProperties = async () => {
+            try {
+                const propsRes = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/properties`);
+                if (propsRes.ok) {
+                    setProperties(await propsRes.json());
+                }
+            } catch (error) {
+                console.error('Error fetching properties:', error);
+            }
+        };
+        fetchProperties();
+    }, [tenantId]);
 
     const handleStartAssembly = async () => {
         if (!confirm('¿Estás seguro de que deseas iniciar la asamblea? Los asistentes podrán unirse.')) return;
@@ -117,12 +139,12 @@ export function AssemblyConsoleLayout({ tenantId, assemblyId, assemblyTitle, ass
             <div className="flex flex-1 overflow-hidden">
                 {/* Left Panel - Attendance (30%) */}
                 <div className="w-[30%] min-w-[300px] h-full">
-                    <AttendancePanel tenantId={tenantId} assemblyId={assemblyId} />
+                    <AttendancePanel tenantId={tenantId} assemblyId={assemblyId} properties={properties} />
                 </div>
 
                 {/* Right Panel - Voting (70%) */}
                 <div className="flex-1 h-full border-l border-white/10">
-                    <VotingPanel tenantId={tenantId} assemblyId={assemblyId} />
+                    <VotingPanel tenantId={tenantId} assemblyId={assemblyId} properties={properties} />
                 </div>
             </div>
         </div>
