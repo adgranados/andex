@@ -124,7 +124,16 @@ export function PropertyDetailsModal({ isOpen, onClose, property, isPresent, cur
                             <label className="text-sm text-slate-300 font-medium">Asiste mediante Apoderado</label>
                             {/* Toggle Switch */}
                             <button
-                                onClick={() => setIsProxy(!isProxy)}
+                                onClick={() => {
+                                    const nextState = !isProxy;
+                                    setIsProxy(nextState);
+                                    if (!nextState) {
+                                        setProxyName('');
+                                        if (isPresent) {
+                                            onUpdateAttendance(property, 'PRESENT', undefined);
+                                        }
+                                    }
+                                }}
                                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${isProxy ? 'bg-indigo-600' : 'bg-slate-700'}`}
                             >
                                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${isProxy ? 'translate-x-6' : 'translate-x-1'}`} />
