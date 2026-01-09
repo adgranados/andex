@@ -56,7 +56,7 @@ export async function POST(request: Request, { params }: { params: { tenantId: s
             propertyName: propertyData.name,
             ownerName: propertyData.ownerName || 'Unknown',
             coefficient: Number(propertyData.coefficient) || 0,
-            representative: 'Self-Joined',
+            representative: propertyData.ownerName || 'Propietario',
             status: 'PRESENT',
             registeredAt: new Date().toISOString()
         });

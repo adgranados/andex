@@ -158,7 +158,14 @@ export default function AssemblyReportPage({ params }: { params: { tenantId: str
                             {attendance.list.map((p: any) => (
                                 <tr key={p.propertyId}>
                                     <td className="border border-gray-300 p-2 font-medium">{p.propertyName}</td>
-                                    <td className="border border-gray-300 p-2">{p.ownerName}</td>
+                                    <td className="border border-gray-300 p-2">
+                                        <div>{p.ownerName}</div>
+                                        {p.representative && p.representative !== p.ownerName && (
+                                            <div className="text-xs text-gray-500 mt-1">
+                                                Apoderado: {p.representative}
+                                            </div>
+                                        )}
+                                    </td>
                                     <td className="border border-gray-300 p-2 text-right">{p.coefficient.toFixed(4)}</td>
                                     <td className="border border-gray-300 p-2 text-center">
                                         <span className={`px-2 py-0.5 rounded text-xs font-bold ${p.status === 'PRESENT' ? 'bg-green-100 text-green-800' : 'bg-red-50 text-red-800'

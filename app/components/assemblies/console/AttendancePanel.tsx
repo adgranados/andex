@@ -16,10 +16,11 @@ interface Property {
 interface AttendanceRecord {
     propertyId: string;
     status: string;
+    representative?: string;
 }
 
 export function AttendancePanel({ tenantId, assemblyId, properties }: { tenantId: string; assemblyId: string; properties: Property[] }) {
-    const [attendance, setAttendance] = useState<Record<string, string>>({});
+    const [attendance, setAttendance] = useState<Record<string, { status: string; representative?: string }>>({});
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
@@ -36,8 +37,8 @@ export function AttendancePanel({ tenantId, assemblyId, properties }: { tenantId
             eventSource.onmessage = (event) => {
                 try {
                     const data: AttendanceRecord[] = JSON.parse(event.data);
-                    const attMap: Record<string, string> = {};
-                    data.forEach(r => attMap[r.propertyId] = r.status);
+                    const attMap: Record<string, { status: string; representative?: string }> = {};
+                    data.forEach(r => attMap[r.propertyId] = { status: r.status, representative: r.representative });
                     setAttendance(attMap);
                     setLoading(false);
                 } catch (err) {
@@ -60,28 +61,8 @@ export function AttendancePanel({ tenantId, assemblyId, properties }: { tenantId
         };
     }, [tenantId, assemblyId]);
 
-    const handleToggleAttendance = async (property: Property) => {
-        const isPresent = attendance[property.id] === 'PRESENT';
-
-        // If present, we might want to allow removing it? 
-        // The modal button text suggests "Mark as Absent". 
-        // We need to support removing attendance or toggling status.
-        // For now, let's assume the API supports toggling or we just overwrite.
-        // If we want to remove, we might need a DELETE endpoint or update status to ABSENT.
-        // Let's stick to the previous logic: if present, do nothing (or maybe toggle if we want to support it now).
-        // The user request implies seeing info, but the modal I built has a toggle button.
-        // Let's implement toggle logic here.
-
-        const newStatus = isPresent ? 'ABSENT' : 'PRESENT';
-
+    const handleUpdateAttendance = async (property: Property, status: string, representative?: string) => {
         try {
-            // If we are marking absent, maybe we delete the doc? Or update status.
-            // The current API POST sets status to PRESENT.
-            // We might need to update the API to handle status or DELETE.
-            // For MVP, let's just re-post with new status if we want to support absent.
-            // But wait, the previous code said "If isPresent return".
-            // Let's allow re-posting for now, assuming the API upserts.
-
             const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/assemblies/${assemblyId}/attendance`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -90,24 +71,10 @@ export function AttendancePanel({ tenantId, assemblyId, properties }: { tenantId
                     propertyName: property.name,
                     ownerName: property.ownerName,
                     coefficient: property.coefficient,
-                    representative: 'Admin Manual',
-                    status: newStatus // We need to update API to accept status if we want to support Absent
+                    representative,
+                    status
                 })
             });
-
-            // Actually, the API hardcodes 'PRESENT'. 
-            // If I want to support "Mark Absent", I should probably update the API.
-            // But for this task "Show owner name and popup", I should focus on that.
-            // I'll leave the toggle logic as "Mark Present" only for now to be safe, 
-            // OR I can quickly update the API to accept status.
-            // Let's just call the existing API which marks PRESENT. 
-            // If they are already present, the button in modal says "Mark Absent" but my code below 
-            // might not support it yet. 
-            // Let's check the API again. 
-            // API: `status: 'PRESENT'` hardcoded.
-            // So "Mark Absent" won't work without API change.
-            // I will stick to "Mark Present" behavior for now, or just update the API quickly.
-            // Updating API is better UX.
 
             if (!res.ok) {
                 console.error('Failed to mark attendance');
@@ -116,6 +83,8 @@ export function AttendancePanel({ tenantId, assemblyId, properties }: { tenantId
             console.error(error);
         }
     };
+    // ...
+
 
     const filteredProperties = properties.filter(p =>
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -124,26 +93,22 @@ export function AttendancePanel({ tenantId, assemblyId, properties }: { tenantId
 
     const totalCoefficient = properties.reduce((sum, p) => sum + (p.coefficient || 0), 0);
     const presentCoefficient = properties.reduce((sum, p) => {
-        return attendance[p.id] === 'PRESENT' ? sum + (p.coefficient || 0) : sum;
+        return attendance[p.id]?.status === 'PRESENT' ? sum + (p.coefficient || 0) : sum;
     }, 0);
 
     const quorumPercentage = totalCoefficient > 0 ? (presentCoefficient / totalCoefficient) * 100 : 0;
 
     const handleManualRefresh = async () => {
         console.log('Manual refresh clicked');
-        console.log('Current User:', auth.currentUser);
-        if (auth.currentUser) {
-            const token = await auth.currentUser.getIdTokenResult();
-            console.log('Claims:', token.claims);
-        }
+        // Removed unused auth context logging for clarity
 
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_PATH || ''}/api/t/${tenantId}/assemblies/${assemblyId}/attendance`);
             if (res.ok) {
                 const data: AttendanceRecord[] = await res.json();
                 console.log('API Attendance Data:', data);
-                const attMap: Record<string, string> = {};
-                data.forEach(r => attMap[r.propertyId] = r.status);
+                const attMap: Record<string, { status: string; representative?: string }> = {};
+                data.forEach(r => attMap[r.propertyId] = { status: r.status, representative: r.representative });
                 setAttendance(attMap);
             }
         } catch (error) {
@@ -189,7 +154,11 @@ export function AttendancePanel({ tenantId, assemblyId, properties }: { tenantId
 
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
                 {filteredProperties.map(property => {
-                    const isPresent = attendance[property.id] === 'PRESENT';
+                    const record = attendance[property.id];
+                    const isPresent = record?.status === 'PRESENT';
+                    const representative = record?.representative;
+                    const isProxy = !!representative && representative !== property.ownerName;
+
                     return (
                         <div
                             key={property.id}
@@ -199,11 +168,21 @@ export function AttendancePanel({ tenantId, assemblyId, properties }: { tenantId
                         >
                             <div className="overflow-hidden">
                                 <div className="text-sm font-bold text-white truncate">{property.name}</div>
-                                <div className="text-xs text-slate-300 truncate flex items-center gap-1">
-                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 opacity-70">
-                                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-5.5-2.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM10 12a5.99 5.99 0 00-4.793 2.39A9.916 9.916 0 0010 18c2.314 0 4.438-.784 6.131-2.1.04-.05.099-.066.145-.04a5.99 5.99 0 00-4.793-2.39z" clipRule="evenodd" />
-                                    </svg>
-                                    {property.ownerName || 'Sin propietario'}
+                                <div className="text-xs text-slate-300 truncate flex flex-col gap-0.5">
+                                    <div className="flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3 opacity-70">
+                                            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-5.5-2.5a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0zM10 12a5.99 5.99 0 00-4.793 2.39A9.916 9.916 0 0010 18c2.314 0 4.438-.784 6.131-2.1.04-.05.099-.066.145-.04a5.99 5.99 0 00-4.793-2.39z" clipRule="evenodd" />
+                                        </svg>
+                                        {property.ownerName || 'Sin propietario'}
+                                    </div>
+                                    {isPresent && isProxy && (
+                                        <div className="flex items-center gap-1 text-indigo-300">
+                                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-3 h-3">
+                                                <path d="M7 8a3 3 0 100-6 3 3 0 000 6zM14.5 9a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM1.615 16.428a1.224 1.224 0 01-.569-1.175 6.002 6.002 0 0111.908 0c.058.467-.172.92-.57 1.174A9.953 9.953 0 017 18a9.953 9.953 0 01-5.385-1.572zM14.5 16h-.106c.07-.297.088-.611.048-.933a7.47 7.47 0 00-1.588-3.755 4.502 4.502 0 015.874 2.636.818.818 0 01-.36.98A7.465 7.465 0 0114.5 16z" />
+                                            </svg>
+                                            Apoderado: {representative}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className={`w-3 h-3 rounded-full shrink-0 ${isPresent ? 'bg-green-500' : 'bg-slate-600'}`}></div>
@@ -216,8 +195,9 @@ export function AttendancePanel({ tenantId, assemblyId, properties }: { tenantId
                 isOpen={!!selectedProperty}
                 onClose={() => setSelectedProperty(null)}
                 property={selectedProperty}
-                isPresent={selectedProperty ? attendance[selectedProperty.id] === 'PRESENT' : false}
-                onToggleAttendance={handleToggleAttendance}
+                isPresent={selectedProperty ? attendance[selectedProperty.id]?.status === 'PRESENT' : false}
+                currentRepresentative={selectedProperty ? attendance[selectedProperty.id]?.representative : undefined}
+                onUpdateAttendance={handleUpdateAttendance}
             />
         </div>
     );
